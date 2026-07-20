@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collaborative Silly Story</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-light: #F1EFE8; --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 14px; --radius-lg: 18px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 24px; font-weight: 800; color: #fff; }
+  header .header-left p { font-size: 14px; color: #D8D5F5; margin-top: 4px; }
+  .pill { font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.16); color: #fff; }
+
+  main { max-width: 780px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  .intro { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 26px; text-align: center; }
+  .intro h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--purple-dark); }
+  .intro p { font-size: 15px; color: var(--text-secondary); line-height: 1.55; }
+
+  .section-label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 30px 0 14px; text-align: center; }
+  .section-label:first-of-type { margin-top: 0; }
+
+  /* Comic-strip style steps */
+  .steps { display: flex; flex-direction: column; gap: 14px; }
+  .step { display: flex; align-items: center; gap: 16px; border-radius: var(--radius-lg); padding: 16px 20px; border: 2px solid; }
+  .step-1 { background: var(--purple-light); border-color: #C9C4F2; }
+  .step-2 { background: var(--teal-light); border-color: #9FDDC4; }
+  .step-3 { background: var(--coral-light); border-color: #EFC4AC; }
+  .step-4 { background: var(--gold-light); border-color: #E8CE93; }
+
+  .step-emoji { font-size: 34px; flex-shrink: 0; width: 52px; text-align: center; }
+  .step-body { flex: 1; }
+  .step-num-badge { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 9px; border-radius: 20px; color: #fff; margin-bottom: 5px; }
+  .step-1 .step-num-badge { background: var(--purple); }
+  .step-2 .step-num-badge { background: var(--teal); }
+  .step-3 .step-num-badge { background: var(--coral); }
+  .step-4 .step-num-badge { background: var(--gold); }
+  .step-title { font-size: 16.5px; font-weight: 800; margin-bottom: 3px; }
+  .step-1 .step-title { color: var(--purple-dark); }
+  .step-2 .step-title { color: var(--teal); }
+  .step-3 .step-title { color: var(--coral); }
+  .step-4 .step-title { color: var(--gold); }
+  .step p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+  .arrow-down { text-align: center; font-size: 20px; color: var(--border-strong); margin: -4px 0; }
+
+  .repeat-note { text-align: center; font-size: 14px; color: var(--purple-dark); background: var(--purple-light); border-radius: 30px; padding: 10px 18px; margin-top: 16px; font-weight: 700; display: inline-block; }
+  .repeat-note-wrap { text-align: center; }
+
+  /* Story log */
+  .log-wrap { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 22px; }
+  .log-intro { font-size: 14.5px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.55; text-align: center; }
+
+  .add-row { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+  textarea { width: 100%; font-family: var(--font); font-size: 15px; padding: 14px 16px; border-radius: var(--radius); border: 2px solid var(--border-strong); resize: vertical; min-height: 70px; background: var(--surface-alt); color: var(--text); }
+  textarea:focus { outline: none; border-color: var(--purple); background: var(--surface); }
+
+  .btn { font-family: var(--font); font-size: 15px; font-weight: 800; padding: 12px 22px; border-radius: 30px; cursor: pointer; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text); transition: transform 0.1s; box-shadow: 0 3px 0 var(--border-strong); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--border-strong); }
+  .btn-primary { background: var(--purple); color: #fff; border: none; box-shadow: 0 3px 0 var(--purple-dark); }
+  .btn-primary:active { box-shadow: 0 1px 0 var(--purple-dark); }
+  .btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .btn-full { width: 100%; }
+
+  .rounds { display: flex; flex-direction: column; gap: 12px; }
+  .round-entry { background: var(--purple-light); border-radius: var(--radius); padding: 14px 16px; border-left: 5px solid var(--purple); }
+  .round-entry .rnum { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--purple-dark); margin-bottom: 5px; }
+  .round-entry .rtxt { font-size: 15px; line-height: 1.55; }
+  .empty-log { text-align: center; font-size: 14px; color: var(--text-muted); padding: 24px 0; }
+  .empty-log .big-emoji { font-size: 36px; display: block; margin-bottom: 8px; }
+
+  .story-reveal { display: none; margin-top: 20px; background: var(--purple); border-radius: var(--radius-lg); padding: 22px; }
+  .story-reveal.show { display: block; }
+  .story-reveal h3 { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 12px; text-align: center; }
+  .story-reveal .full-text { font-size: 15.5px; line-height: 1.75; color: #fff; white-space: pre-wrap; background: rgba(255,255,255,0.1); border-radius: var(--radius); padding: 16px 18px; }
+
+  .discuss { background: var(--gold-light); border: 2px solid #E8CE93; border-radius: var(--radius-lg); padding: 18px 22px; margin-top: 26px; text-align: center; }
+  .discuss h3 { font-size: 15px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+  .discuss p { font-size: 14.5px; color: #6b4f0f; line-height: 1.55; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>📖 Collaborative Silly Story</h1>
+    <p>Track A · Week 2 · Activity 3 — The whole class builds one silly story together</p>
+  </div>
+  <span class="pill">15 min · whole class</span>
+</header>
+
+<main>
+  <div class="intro">
+    <h2>Let's write a story with AI — together!</h2>
+    <p>One person starts. AI writes a bit. The class votes on what happens next. We do this a few times until we have a whole silly story!</p>
+  </div>
+
+  <p class="section-label">🎬 How it works</p>
+  <div class="steps">
+    <div class="step step-1">
+      <div class="step-emoji">💡</div>
+      <div class="step-body">
+        <span class="step-num-badge">Step 1</span>
+        <div class="step-title">Someone shares a silly idea</div>
+        <p>A talking sandwich? A dragon scared of ladders? Any silly idea can start the story!</p>
+      </div>
+    </div>
+    <div class="arrow-down">⬇️</div>
+    <div class="step step-2">
+      <div class="step-emoji">🔊</div>
+      <div class="step-body">
+        <span class="step-num-badge">Step 2</span>
+        <div class="step-title">We read what AI wrote out loud</div>
+        <p>The teacher types the idea into AI, and the whole class listens to what happens.</p>
+      </div>
+    </div>
+    <div class="arrow-down">⬇️</div>
+    <div class="step step-3">
+      <div class="step-emoji">🙋</div>
+      <div class="step-body">
+        <span class="step-num-badge">Step 3</span>
+        <div class="step-title">The class votes on what happens next</div>
+        <p>A few people share ideas, then everyone votes with a show of hands for their favorite.</p>
+      </div>
+    </div>
+    <div class="arrow-down">⬇️</div>
+    <div class="step step-4">
+      <div class="step-emoji">✏️</div>
+      <div class="step-body">
+        <span class="step-num-badge">Step 4</span>
+        <div class="step-title">The teacher tells AI what we picked</div>
+        <p>AI keeps writing the story using the class's idea — then we go back to Step 2!</p>
+      </div>
+    </div>
+  </div>
+  <div class="repeat-note-wrap">
+    <span class="repeat-note">🔁 Repeat Steps 2–4 about 4–5 times, then read the whole story out loud!</span>
+  </div>
+
+  <p class="section-label">📝 Our story so far</p>
+  <div class="log-wrap">
+    <p class="log-intro">Every time AI writes a new part, add it here so we don't lose it!</p>
+    <div class="add-row">
+      <textarea id="round-input" placeholder="What did AI just write? Type or paste it here..."></textarea>
+      <button class="btn btn-primary btn-full" onclick="addRound()">➕ Add this part to our story</button>
+    </div>
+    <div class="rounds" id="rounds-list">
+      <div class="empty-log" id="empty-log"><span class="big-emoji">📄</span>Nothing here yet — add Part 1 above to begin!</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="loadSample()">🧪 Load sample story (for testing)</button>
+      <button class="btn" onclick="revealStory()">📖 Read the whole story</button>
+      <button class="btn" onclick="resetLog()">🔄 Start over</button>
+    </div>
+    <div class="story-reveal" id="story-reveal">
+      <h3>🎉 Our finished story!</h3>
+      <div class="full-text" id="full-text"></div>
+    </div>
+  </div>
+
+  <div class="discuss">
+    <h3>💬 Let's talk about it</h3>
+    <p>Was there a part where AI surprised you? Was it <b>wrong</b> — or just <b>different</b> from what you expected?</p>
+  </div>
+</main>
+<footer>Track A · Week 2 · Activity 3 &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+let rounds = [];
+
+function addRound() {
+  const input = document.getElementById('round-input');
+  const text = input.value.trim();
+  if (!text) return;
+  rounds.push(text);
+  input.value = '';
+  renderRounds();
+  document.getElementById('story-reveal').classList.remove('show');
+}
+
+function renderRounds() {
+  const list = document.getElementById('rounds-list');
+  if (rounds.length === 0) {
+    list.innerHTML = '<div class="empty-log" id="empty-log"><span class="big-emoji">📄</span>Nothing here yet — add Part 1 above to begin!</div>';
+    return;
+  }
+  list.innerHTML = rounds.map((r, i) => `
+    <div class="round-entry">
+      <div class="rnum">Part ${i + 1}</div>
+      <div class="rtxt">${escapeHtml(r)}</div>
+    </div>
+  `).join('');
+}
+
+function revealStory() {
+  if (rounds.length === 0) return;
+  document.getElementById('full-text').textContent = rounds.join('\n\n');
+  document.getElementById('story-reveal').classList.add('show');
+  document.getElementById('story-reveal').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function loadSample() {
+  rounds = [
+    "Once upon a time, there was a dragon named Ember who was the bravest dragon in the whole kingdom — except for one thing. Ember was terrified of ladders. Whenever he saw one, he would hide behind the nearest cloud and refuse to come out until it was gone.",
+    "The class voted: Ember should be forced to face a giant ladder to save his best friend, a squirrel named Pip, who was stuck at the top of the tallest tree in the forest. Ember's claws trembled as he looked up at the ladder leaning against the tree. \"I can't do this,\" he whispered. But Pip's tiny voice called down, \"You can, Ember! I believe in you!\"",
+    "The class voted: Ember should try flying up next to the ladder instead of climbing it. So Ember took a deep breath, flapped his enormous wings, and soared straight up beside the ladder — never touching a single rung! He scooped up Pip in his claws just as the ladder began to wobble and crash to the ground.",
+    "The class voted: everyone in the kingdom should throw a party for Ember. That evening, every animal in the forest gathered for the biggest party the kingdom had ever seen. They gave Ember a shiny medal that said \"Bravest Dragon (Even Without Ladders).\" Ember smiled, still a little scared of ladders — but very, very proud of himself."
+  ];
+  renderRounds();
+  document.getElementById('story-reveal').classList.remove('show');
+}
+
+function resetLog() {
+  rounds = [];
+  renderRounds();
+  document.getElementById('story-reveal').classList.remove('show');
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

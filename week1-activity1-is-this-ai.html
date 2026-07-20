@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Is this AI? — Card Sort Activity</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gray-light: #F1EFE8; --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 8px; --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--surface); border-bottom: 0.5px solid var(--border); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 20px; font-weight: 600; color: var(--text); }
+  header p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-left { display: flex; flex-direction: column; }
+
+  .score-row { display: flex; gap: 8px; align-items: center; }
+  .pill { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
+  .pill-total { background: var(--surface-alt); color: var(--gray-dark); border: 0.5px solid var(--border-strong); }
+  .pill-ai { background: var(--purple-light); color: var(--purple-dark); }
+  .pill-not { background: var(--teal-light); color: var(--teal); }
+
+  .progress-bar { height: 3px; background: var(--border); position: sticky; top: 73px; z-index: 9; }
+  .progress-fill { height: 100%; background: var(--purple); transition: width 0.3s ease; width: 0%; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 10px; }
+
+  .pool-wrap { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 20px; min-height: 90px; transition: border-color 0.15s, background 0.15s; }
+  .pool-wrap.drag-over { border-color: var(--purple); background: var(--purple-light); }
+  .pool-cards { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pool-hint { font-size: 13px; color: var(--text-muted); text-align: center; padding: 16px 0; width: 100%; }
+
+  .zones { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  @media (max-width: 600px) { .zones { grid-template-columns: 1fr; } }
+
+  .zone { background: var(--surface); border-radius: var(--radius-lg); padding: 16px; min-height: 220px; border: 2px dashed var(--border-strong); transition: border-color 0.15s, background 0.15s; }
+  .zone-ai { border-color: #AFA9EC; }
+  .zone-not { border-color: #5DCAA5; }
+  .zone.drag-over { border-style: solid; background: var(--purple-light); border-color: var(--purple); }
+
+  .zone-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 0.5px solid var(--border); }
+  .zone-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .zone-ai .zone-icon { background: var(--purple-light); }
+  .zone-not .zone-icon { background: var(--teal-light); }
+  .zone-title { font-size: 15px; font-weight: 600; }
+  .zone-ai .zone-title { color: var(--purple-dark); }
+  .zone-not .zone-title { color: var(--teal); }
+  .zone-count { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+
+  .zone-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+  .zone-empty { font-size: 13px; color: var(--text-muted); text-align: center; padding: 24px 0; width: 100%; }
+
+  .card { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 10px 10px; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); cursor: grab; width: 116px; transition: border-color 0.15s, transform 0.1s, box-shadow 0.1s; user-select: none; position: relative; }
+  .card:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .card:active { cursor: grabbing; transform: scale(0.97); }
+  .card.dragging { opacity: 0.35; transform: scale(0.94); }
+  .card.correct { border-color: #0F6E56; background: #E1F5EE; }
+  .card.incorrect { border-color: #993C1D; background: #FAECE7; }
+
+  .card-emoji { font-size: 30px; line-height: 1.1; }
+  .card-name { font-size: 11.5px; font-weight: 600; color: var(--text); text-align: center; line-height: 1.3; }
+  .card-verdict { font-size: 11px; font-weight: 700; margin-top: 2px; display: none; }
+  .card.correct .card-verdict { display: block; color: #085041; }
+  .card.incorrect .card-verdict { display: block; color: #712B13; }
+  .card-why { font-size: 10.5px; color: var(--text-secondary); text-align: center; line-height: 1.4; margin-top: 4px; display: none; border-top: 0.5px solid var(--border); padding-top: 6px; }
+  .card.revealed .card-why { display: block; }
+
+  .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn { font-family: var(--font); font-size: 14px; font-weight: 500; padding: 10px 22px; border-radius: var(--radius); cursor: pointer; border: 0.5px solid var(--border-strong); background: var(--surface); color: var(--text); transition: background 0.12s; }
+  .btn:hover { background: var(--surface-alt); }
+  .btn-primary { background: var(--purple); color: white; border-color: var(--purple); }
+  .btn-primary:hover { background: var(--purple-dark); border-color: var(--purple-dark); }
+
+  .result-banner { display: none; background: var(--purple-light); border: 0.5px solid #AFA9EC; border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 20px; text-align: center; }
+  .result-banner.show { display: block; }
+  .result-banner h2 { font-size: 20px; font-weight: 700; color: var(--purple-dark); margin-bottom: 4px; }
+  .result-banner p { font-size: 14px; color: var(--purple); }
+
+  .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>🤖 Is this AI?</h1>
+    <p>Drag each card into the correct zone</p>
+  </div>
+  <div class="score-row">
+    <span class="pill pill-total" id="pill-total">0 / 20 placed</span>
+    <span class="pill pill-ai" id="pill-ai">✓ 0 AI</span>
+    <span class="pill pill-not" id="pill-not">✓ 0 Not AI</span>
+  </div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<main>
+  <div class="result-banner" id="result-banner">
+    <h2 id="result-headline"></h2>
+    <p id="result-sub"></p>
+  </div>
+
+  <p class="section-label">Cards to sort</p>
+  <div class="pool-wrap" id="pool" ondragover="onOver(event,'pool')" ondragleave="onLeave(event,'pool')" ondrop="onDrop(event,'pool')">
+    <div class="pool-cards" id="pool-cards"></div>
+    <div class="pool-hint" id="pool-hint" style="display:none">All cards placed! Hit "Check answers" when ready.</div>
+  </div>
+
+  <div class="zones">
+    <div class="zone zone-ai" id="zone-ai" ondragover="onOver(event,'ai')" ondragleave="onLeave(event,'ai')" ondrop="onDrop(event,'ai')">
+      <div class="zone-header">
+        <div class="zone-icon">🤖</div>
+        <span class="zone-title">AI</span>
+        <span class="zone-count" id="count-ai">0 cards</span>
+      </div>
+      <div class="zone-cards" id="cards-ai">
+        <span class="zone-empty">Drop AI things here</span>
+      </div>
+    </div>
+    <div class="zone zone-not" id="zone-not" ondragover="onOver(event,'not')" ondragleave="onLeave(event,'not')" ondrop="onDrop(event,'not')">
+      <div class="zone-header">
+        <div class="zone-icon">❌</div>
+        <span class="zone-title">Not AI</span>
+        <span class="zone-count" id="count-not">0 cards</span>
+      </div>
+      <div class="zone-cards" id="cards-not">
+        <span class="zone-empty">Drop non-AI things here</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="checkAnswers()">Check answers</button>
+    <button class="btn" onclick="revealAll()">Reveal all</button>
+    <button class="btn" onclick="resetAll()">Reset</button>
+  </div>
+</main>
+<footer>Track A · Week 1 · Activity 1 &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+const CARDS = [
+  { id:'tiktok',    label:"TikTok For You feed",    emoji:'🎵', ai:true,  why:'Learns from your watch time, replays, and skips to predict what you want to see next.' },
+  { id:'spotify',   label:'Spotify Discover Weekly', emoji:'🎧', ai:true,  why:'Trained on listening patterns of millions of people to predict songs you\'ll enjoy.' },
+  { id:'gmaps',     label:'Google Maps traffic',     emoji:'🗺️', ai:true,  why:'Uses real-time data from millions of phones to predict travel times and routes.' },
+  { id:'faceunlock',label:'Face unlock',             emoji:'😶', ai:true,  why:'Uses computer vision to recognize your unique facial features — it learned what you look like.' },
+  { id:'netflix',   label:'Netflix recommendations', emoji:'🎬', ai:true,  why:'Learns from what you watch, pause, and skip to suggest shows you\'ll enjoy.' },
+  { id:'snapchat',  label:'Snapchat filters',        emoji:'👻', ai:true,  why:'Uses real-time facial landmark detection — a form of computer vision — to track your face.' },
+  { id:'gmail',     label:'Gmail spam filter',       emoji:'📧', ai:true,  why:'Learned from billions of emails to recognize what spam looks like — and keeps improving.' },
+  { id:'siri',      label:'Siri / Google Assistant', emoji:'🎙️', ai:true,  why:'Uses natural language processing to understand what you say, trained on millions of queries.' },
+  { id:'duolingo',  label:'Duolingo adapting to you',emoji:'🦜', ai:true,  why:'Adjusts lesson difficulty based on your performance — it learns how you learn.' },
+  { id:'gtranslate',label:'Google Translate',        emoji:'🌍', ai:true,  why:'Uses neural machine translation trained on billions of sentence pairs — not just a dictionary.' },
+  { id:'calc',      label:'A calculator',            emoji:'🔢', ai:false, why:'Follows fixed mathematical rules — it never learns or improves. Same result every time.' },
+  { id:'thermostat',label:'Basic thermostat',        emoji:'🌡️', ai:false, why:'Just a timer and temperature switch. It doesn\'t learn your preferences — it follows rules you set.' },
+  { id:'ctrlf',     label:'Ctrl+F (find on page)',   emoji:'🔍', ai:false, why:'Searches for exact text matches using a fixed rule. No learning involved.' },
+  { id:'stopwatch', label:'Stopwatch app',           emoji:'⏱️', ai:false, why:'Counts time using fixed logic. Does exactly what you tell it — no pattern recognition.' },
+  { id:'remote',    label:'TV remote',               emoji:'📺', ai:false, why:'Sends fixed infrared signals. No learning, no intelligence — just button codes.' },
+  { id:'barcode',   label:'Barcode scanner',         emoji:'📦', ai:false, why:'Reads a fixed pattern of lines and looks up the code in a database. Rule-based, not AI.' },
+  { id:'vending',   label:'Vending machine',         emoji:'🥤', ai:false, why:'Follows fixed rules: press button, check payment, release item. No learning.' },
+  { id:'clock',     label:'Digital clock',           emoji:'🕐', ai:false, why:'Counts seconds using a fixed timer circuit. Has no ability to learn or adapt.' },
+  { id:'microwave', label:'Microwave timer',         emoji:'📟', ai:false, why:'Counts down from a number you set. Fixed logic — it never gets better at cooking your food.' },
+  { id:'spellcheck',label:'Word spell check',        emoji:'📝', ai:false, why:'Compares words against a fixed dictionary using rules — different from AI grammar tools.' },
+];
+
+let dragging = null;
+let placed = {};
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function makeCard(c) {
+  const d = document.createElement('div');
+  d.className = 'card';
+  d.id = 'c-' + c.id;
+  d.draggable = true;
+  d.innerHTML = `<div class="card-emoji">${c.emoji}</div><div class="card-name">${c.label}</div><div class="card-verdict" id="v-${c.id}"></div><div class="card-why">${c.why}</div>`;
+  d.addEventListener('dragstart', e => { dragging = c.id; d.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  d.addEventListener('dragend', () => { d.classList.remove('dragging'); dragging = null; });
+  return d;
+}
+
+function init() {
+  const shuffled = shuffle([...CARDS]);
+  const pool = document.getElementById('pool-cards');
+  shuffled.forEach(c => pool.appendChild(makeCard(c)));
+  updateUI();
+}
+
+function onOver(e, zone) {
+  e.preventDefault();
+  getEl(zone).classList.add('drag-over');
+}
+function onLeave(e, zone) { getEl(zone).classList.remove('drag-over'); }
+
+function getEl(zone) {
+  return zone === 'pool' ? document.getElementById('pool') : document.getElementById('zone-' + zone);
+}
+
+function onDrop(e, zone) {
+  e.preventDefault();
+  getEl(zone).classList.remove('drag-over');
+  if (!dragging) return;
+  const card = document.getElementById('c-' + dragging);
+  card.classList.remove('correct','incorrect','revealed');
+  document.getElementById('v-' + dragging).textContent = '';
+
+  if (zone === 'pool') {
+    delete placed[dragging];
+    document.getElementById('pool-cards').appendChild(card);
+  } else {
+    placed[dragging] = zone;
+    document.getElementById('cards-' + zone).appendChild(card);
+  }
+  updateUI();
+  document.getElementById('result-banner').classList.remove('show');
+}
+
+function updateUI() {
+  const n = Object.keys(placed).length;
+  document.getElementById('progress').style.width = (n / 20 * 100) + '%';
+  document.getElementById('pill-total').textContent = n + ' / 20 placed';
+  document.getElementById('pool-hint').style.display = n === 20 ? 'block' : 'none';
+
+  ['ai','not'].forEach(z => {
+    const cnt = document.querySelectorAll('#cards-' + z + ' .card').length;
+    document.getElementById('count-' + z).textContent = cnt + (cnt === 1 ? ' card' : ' cards');
+    const empty = document.querySelector('#cards-' + z + ' .zone-empty');
+    if (empty) empty.style.display = cnt > 0 ? 'none' : 'block';
+  });
+}
+
+function checkAnswers() {
+  let correct = 0, total = Object.keys(placed).length;
+  CARDS.forEach(c => {
+    const card = document.getElementById('c-' + c.id);
+    const v = document.getElementById('v-' + c.id);
+    if (!placed[c.id]) return;
+    const ok = (placed[c.id] === 'ai') === c.ai;
+    card.classList.remove('correct','incorrect');
+    card.classList.add(ok ? 'correct' : 'incorrect', 'revealed');
+    v.textContent = ok ? '✓ Correct!' : '✗ Incorrect';
+    if (ok) correct++;
+  });
+
+  const aiCorrect = CARDS.filter(c => c.ai && placed[c.id] === 'ai').length;
+  const notCorrect = CARDS.filter(c => !c.ai && placed[c.id] === 'not').length;
+  document.getElementById('pill-ai').textContent = '✓ ' + aiCorrect + ' AI';
+  document.getElementById('pill-not').textContent = '✓ ' + notCorrect + ' Not AI';
+
+  const banner = document.getElementById('result-banner');
+  const h = document.getElementById('result-headline');
+  const s = document.getElementById('result-sub');
+  banner.classList.add('show');
+
+  if (total < 20) {
+    h.textContent = correct + ' / ' + total + ' correct so far';
+    s.textContent = 'Place all 20 cards to see your final score.';
+  } else if (correct === 20) {
+    h.textContent = '🎉 Perfect score! 20 / 20';
+    s.textContent = 'You can spot the difference between AI and rule-based tech. Nice!';
+    launchConfetti();
+  } else if (correct >= 16) {
+    h.textContent = '🌟 ' + correct + ' / 20 — great work!';
+    s.textContent = 'Check the red cards to see where AI can be sneaky.';
+  } else {
+    h.textContent = correct + ' / 20 — keep going!';
+    s.textContent = 'Read the explanations on each card and try again.';
+  }
+  banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function revealAll() {
+  CARDS.forEach(c => {
+    const card = document.getElementById('c-' + c.id);
+    card.classList.add('revealed');
+    if (placed[c.id]) {
+      const ok = (placed[c.id] === 'ai') === c.ai;
+      card.classList.add(ok ? 'correct' : 'incorrect');
+    }
+  });
+}
+
+function resetAll() {
+  placed = {};
+  const pool = document.getElementById('pool-cards');
+  const shuffled = shuffle([...CARDS]);
+  shuffled.forEach(c => {
+    const card = document.getElementById('c-' + c.id);
+    card.classList.remove('correct','incorrect','revealed');
+    document.getElementById('v-' + c.id).textContent = '';
+    pool.appendChild(card);
+  });
+  document.getElementById('result-banner').classList.remove('show');
+  document.getElementById('pill-ai').textContent = '✓ 0 AI';
+  document.getElementById('pill-not').textContent = '✓ 0 Not AI';
+  updateUI();
+}
+
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.className = 'confetti';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const pieces = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width, y: -10,
+    r: Math.random() * 6 + 3,
+    c: ['#534AB7','#0F6E56','#993C1D','#FAC775','#5DCAA5'][Math.floor(Math.random()*5)],
+    vy: Math.random() * 3 + 2, vx: (Math.random()-0.5)*2, rot: Math.random()*360, rv: Math.random()*4-2
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      p.y += p.vy; p.x += p.vx; p.rot += p.rv;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.r,-p.r,p.r*2,p.r*2); ctx.restore();
+    });
+    frame++;
+    if (frame < 120) requestAnimationFrame(draw); else canvas.remove();
+  }
+  draw();
+}
+
+init();
+</script>
+</body>
+</html>

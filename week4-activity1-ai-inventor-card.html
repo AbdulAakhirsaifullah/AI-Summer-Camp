@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Inventor Card</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 14px; --radius-lg: 18px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 24px; font-weight: 800; color: #fff; }
+  header .header-left p { font-size: 14px; color: #D8D5F5; margin-top: 4px; }
+  .pill { font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.16); color: #fff; }
+
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; background: var(--purple); transition: width 0.3s ease; width: 0%; }
+
+  main { max-width: 800px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  .intro { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 22px; text-align: center; }
+  .intro h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--purple-dark); }
+  .intro p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; }
+  .intro ol { text-align: left; max-width: 480px; margin: 14px auto 0; font-size: 14.5px; color: var(--text-secondary); line-height: 1.9; padding-left: 22px; }
+  .intro ol b { color: var(--text); }
+
+  .section-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 0 0 12px; text-align: center; }
+
+  /* ---------- Example card (locked, always filled) ---------- */
+  .example-wrap { margin-bottom: 30px; }
+  .example-flag { text-align: center; font-size: 12.5px; font-weight: 800; color: var(--teal); background: var(--teal-light); border-radius: 20px; padding: 6px 16px; display: block; width: fit-content; margin: 0 auto 12px; }
+
+  /* ---------- Trading card (shared look for example + student cards) ---------- */
+  .trading-card { background: linear-gradient(160deg, var(--purple), var(--purple-dark)); border-radius: 22px; padding: 4px; box-shadow: 0 8px 24px rgba(83,74,183,0.3); }
+  .trading-card-inner { background: var(--surface); border-radius: 18px; padding: 24px; }
+  .tc-toplabel { text-align: center; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
+  .tc-name { text-align: center; font-size: 24px; font-weight: 800; color: var(--purple-dark); margin-bottom: 4px; }
+  .tc-tag { text-align: center; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 18px; }
+  .tc-row { display: flex; gap: 12px; padding: 12px 0; border-top: 1px dashed var(--border); }
+  .tc-row:first-of-type { border-top: none; }
+  .tc-emoji { font-size: 20px; flex-shrink: 0; }
+  .tc-label { font-size: 13px; font-weight: 800; color: var(--purple-dark); margin-bottom: 3px; }
+  .tc-value { font-size: 14.5px; color: var(--text); line-height: 1.5; white-space: pre-wrap; }
+
+  /* ---------- Progress banner ---------- */
+  .progress-banner { background: var(--gold-light); border: 2px solid #E8CE93; border-radius: var(--radius-lg); padding: 14px 20px; text-align: center; font-size: 15px; font-weight: 700; color: #6b4f0f; margin-bottom: 22px; }
+  .progress-banner.done { background: var(--teal-light); border-color: #9FDDC4; color: #0a4a3a; }
+
+  /* ---------- Idea grid ---------- */
+  .idea-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+  @media (max-width: 640px) { .idea-grid { grid-template-columns: 1fr 1fr; } }
+  .idea-card { font-family: var(--font); background: var(--surface); border: 2px solid var(--border-strong); border-radius: var(--radius); padding: 14px 8px; text-align: center; cursor: pointer; transition: transform 0.1s; }
+  .idea-card:active { transform: scale(0.96); }
+  .idea-card.active { background: var(--purple); border-color: var(--purple); }
+  .idea-card.done:not(.active) { border-color: #9FDDC4; background: var(--teal-light); }
+  .idea-card .emoji { font-size: 28px; margin-bottom: 6px; display: block; }
+  .idea-card .txt { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .idea-card.active .txt { color: #fff; }
+  .idea-card .done-check { font-size: 11px; color: var(--teal); font-weight: 800; display: block; margin-top: 3px; }
+  .idea-card.active .done-check { color: #C9E8DB; }
+
+  /* ---------- Fill-in form ---------- */
+  .fill-form { display: none; background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 22px; margin-bottom: 24px; }
+  .fill-form.show { display: block; animation: pop 0.25s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+  .fill-header { text-align: center; margin-bottom: 14px; }
+  .fill-header .fh-emoji { font-size: 34px; display: block; margin-bottom: 6px; }
+  .fill-header .fh-name { font-size: 18px; font-weight: 800; color: var(--purple-dark); }
+  .fill-header .fh-tagline { font-size: 13.5px; color: var(--text-secondary); margin-top: 3px; }
+
+  .think-hint { background: var(--gold-light); border: 1.5px dashed #E8CE93; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: #6b4f0f; line-height: 1.5; margin-bottom: 18px; text-align: center; }
+
+  .field-group { margin-bottom: 14px; }
+  .field-group label { display: block; font-size: 13px; font-weight: 800; color: var(--purple-dark); margin-bottom: 6px; }
+  .field-group input, .field-group textarea {
+    width: 100%; font-family: var(--font); font-size: 14.5px; padding: 11px 13px; border-radius: var(--radius);
+    border: 2px solid var(--border-strong); background: var(--surface-alt); color: var(--text); resize: vertical;
+  }
+  .field-group textarea { min-height: 60px; }
+  .field-group input:focus, .field-group textarea:focus { outline: none; border-color: var(--purple); background: var(--surface); }
+
+  .form-btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .btn-reveal { font-family: var(--font); font-size: 15.5px; font-weight: 800; padding: 13px 26px; border-radius: 30px; cursor: pointer; border: none; color: #fff; background: var(--purple); box-shadow: 0 3px 0 var(--purple-dark); }
+  .btn-reveal:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--purple-dark); }
+  .btn-secondary { font-family: var(--font); font-size: 14px; font-weight: 700; padding: 11px 20px; border-radius: 30px; cursor: pointer; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text-secondary); }
+  .btn-secondary:hover { background: var(--surface-alt); }
+
+  /* ---------- Revealed student card ---------- */
+  .student-card-wrap { display: none; margin-bottom: 24px; }
+  .student-card-wrap.show { display: block; animation: pop 0.3s ease; }
+  .student-card-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>🧠 AI Inventor Card</h1>
+    <p>Track A · Week 4 · Activity 1 — Invent your own AI and think it through</p>
+  </div>
+  <span class="pill">15 min</span>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<main>
+  <div class="intro">
+    <h2>You've learned a lot about AI — now let's invent one!</h2>
+    <p>You've trained a model, talked to a chatbot, and made AI art and music. Now it's your turn to invent an AI of your own.</p>
+    <ol>
+      <li><b>Look at the example below</b> — it's already filled in, just to show you how it works.</li>
+      <li><b>Pick 2 ideas</b> from the grid and fill in your own answers for each one.</li>
+      <li>When you've finished 2 cards, <b>raise your hand</b> and get ready to share your screen!</li>
+    </ol>
+  </div>
+
+  <div class="example-wrap">
+    <p class="section-label">👀 Example — already filled in for you</p>
+    <span class="example-flag">This one's done. You don't need to fill this in.</span>
+    <div class="trading-card">
+      <div class="trading-card-inner">
+        <div class="tc-toplabel">✨ Name your AI</div>
+        <div class="tc-name">BookBuddy</div>
+        <div class="tc-tag">📚 Book Picker &nbsp;·&nbsp; AI Inventor Card</div>
+        <div class="tc-row">
+          <div class="tc-emoji">🤖</div>
+          <div><div class="tc-label">What does my AI do?</div><div class="tc-value">It picks a book for you based on books you liked before.</div></div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-emoji">📚</div>
+          <div><div class="tc-label">What would it be trained on?</div><div class="tc-value">Lots of books, plus notes on which ones kids enjoyed.</div></div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-emoji">⚠️</div>
+          <div><div class="tc-label">What could it get wrong?</div><div class="tc-value">It might only know old books and miss new ones nobody has rated yet.</div></div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-emoji">🚫</div>
+          <div><div class="tc-label">Who should NOT be allowed to use it?</div><div class="tc-value">Little kids who can't read chapter books yet.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-label">🎴 Now pick 2 ideas and fill them in yourself</p>
+  <div class="progress-banner" id="progress-banner">Cards completed: 0 of 2</div>
+
+  <div class="idea-grid" id="idea-grid"><!-- filled by JS --></div>
+
+  <div class="fill-form" id="fill-form">
+    <div class="fill-header">
+      <span class="fh-emoji" id="fh-emoji">🤖</span>
+      <div class="fh-name" id="fh-name">—</div>
+      <div class="fh-tagline" id="fh-tagline">—</div>
+    </div>
+    <div class="think-hint" id="think-hint">🤔 —</div>
+
+    <div class="field-group">
+      <label for="in-name">✨ Name your AI</label>
+      <input type="text" id="in-name" placeholder="Give it a fun name...">
+    </div>
+    <div class="field-group">
+      <label for="in-does">🤖 What does my AI do?</label>
+      <textarea id="in-does" placeholder="Explain it like you're telling a friend..."></textarea>
+    </div>
+    <div class="field-group">
+      <label for="in-trained">📚 What would it be trained on?</label>
+      <textarea id="in-trained" placeholder="What examples would it need to learn from?"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="in-wrong">⚠️ What could it get wrong?</label>
+      <textarea id="in-wrong" placeholder="Every AI makes mistakes sometimes — what kind?"></textarea>
+    </div>
+    <div class="field-group">
+      <label for="in-notallowed">🚫 Who should NOT be allowed to use it?</label>
+      <textarea id="in-notallowed" placeholder="Is there anyone this AI could be unsafe or unfair for?"></textarea>
+    </div>
+
+    <div class="form-btn-row">
+      <button class="btn-reveal" onclick="saveAndReveal()">🎴 Save &amp; Reveal This Card</button>
+      <button class="btn-secondary" onclick="closeForm()">⬅ Back to ideas</button>
+    </div>
+  </div>
+
+  <div class="student-card-wrap" id="student-card-wrap">
+    <div class="trading-card">
+      <div class="trading-card-inner">
+        <div class="tc-toplabel">✨ Name your AI</div>
+        <div class="tc-name" id="sc-name">—</div>
+        <div class="tc-tag" id="sc-tag">—</div>
+        <div class="tc-row">
+          <div class="tc-emoji">🤖</div>
+          <div><div class="tc-label">What does my AI do?</div><div class="tc-value" id="sc-does">—</div></div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-emoji">📚</div>
+          <div><div class="tc-label">What would it be trained on?</div><div class="tc-value" id="sc-trained">—</div></div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-emoji">⚠️</div>
+          <div><div class="tc-label">What could it get wrong?</div><div class="tc-value" id="sc-wrong">—</div></div>
+        </div>
+        <div class="tc-row">
+          <div class="tc-emoji">🚫</div>
+          <div><div class="tc-label">Who should NOT be allowed to use it?</div><div class="tc-value" id="sc-notallowed">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="student-card-actions">
+      <button class="btn-secondary" onclick="editCurrentCard()">✏️ Edit this card</button>
+      <button class="btn-secondary" onclick="closeForm()">🎴 Pick another idea</button>
+    </div>
+  </div>
+</main>
+<footer>Track A · Week 4 · Activity 1 &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+// The 7 ideas students choose from (BookBuddy is the locked example above, not in this list)
+const IDEAS = {
+  petmood: { emoji: '🐶', name: 'Pet Mood Reader', tagline: 'An AI that looks at a photo of your pet', hint: 'Think about it: could someone trust this app too much and skip taking their pet to a real vet?' },
+  snackscan: { emoji: '🍽️', name: 'Fridge Recipe Helper', tagline: 'An AI that looks in your fridge', hint: 'Think about it: this AI mostly learned recipes from one part of the world — what if your fridge has food it\'s never seen before?' },
+  weatherwear: { emoji: '🌦️', name: 'Outfit Picker', tagline: 'An AI that checks the weather', hint: 'Think about it: if this AI only learned from cold places, how would it do in a hot country?' },
+  gamegenius: { emoji: '🎮', name: 'Game Suggester', tagline: 'An AI that knows the games you like', hint: 'Think about it: if this AI only used ratings from adults, would it still pick good games for kids?' },
+  sketchpal: { emoji: '🎨', name: 'Doodle Fixer', tagline: 'An AI that looks at your drawings', hint: 'Think about it: if your doodle looked totally new and different, would the AI still understand what you meant?' },
+  mathmate: { emoji: '🧮', name: 'Homework Checker', tagline: 'An AI that looks at your math homework', hint: 'Think about it: if this AI only knew one way to solve a problem, what happens to a student who solves it differently?' },
+  storynight: { emoji: '🌙', name: 'Bedtime Story Maker', tagline: 'An AI that makes up stories', hint: 'Think about it: how could this AI accidentally make a story too scary for bedtime? What should it check first?' }
+};
+
+let studentCards = {}; // key -> {name, does, trained, wrong, notallowed}
+let activeIdea = null;
+
+function buildGrid() {
+  const grid = document.getElementById('idea-grid');
+  grid.innerHTML = '';
+  Object.keys(IDEAS).forEach(key => {
+    const idea = IDEAS[key];
+    const btn = document.createElement('button');
+    btn.className = 'idea-card';
+    btn.dataset.idea = key;
+    btn.onclick = () => openForm(key);
+    btn.innerHTML = `<span class="emoji">${idea.emoji}</span><span class="txt">${idea.name}</span>${studentCards[key] ? '<span class="done-check">✅ done</span>' : ''}`;
+    grid.appendChild(btn);
+  });
+}
+
+function openForm(key) {
+  activeIdea = key;
+  const idea = IDEAS[key];
+
+  document.querySelectorAll('.idea-card').forEach(c => c.classList.toggle('active', c.dataset.idea === key));
+
+  document.getElementById('fh-emoji').textContent = idea.emoji;
+  document.getElementById('fh-name').textContent = idea.name;
+  document.getElementById('fh-tagline').textContent = idea.tagline;
+  document.getElementById('think-hint').textContent = '🤔 ' + idea.hint;
+
+  const saved = studentCards[key];
+  document.getElementById('in-name').value = saved ? saved.name : '';
+  document.getElementById('in-does').value = saved ? saved.does : '';
+  document.getElementById('in-trained').value = saved ? saved.trained : '';
+  document.getElementById('in-wrong').value = saved ? saved.wrong : '';
+  document.getElementById('in-notallowed').value = saved ? saved.notallowed : '';
+
+  document.getElementById('fill-form').classList.add('show');
+  document.getElementById('student-card-wrap').classList.remove('show');
+  document.getElementById('fill-form').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveAndReveal() {
+  if (!activeIdea) return;
+  const name = document.getElementById('in-name').value.trim();
+  const does = document.getElementById('in-does').value.trim();
+  const trained = document.getElementById('in-trained').value.trim();
+  const wrong = document.getElementById('in-wrong').value.trim();
+  const notallowed = document.getElementById('in-notallowed').value.trim();
+
+  if (!name || !does || !trained || !wrong || !notallowed) {
+    alert('Fill in all 5 fields before revealing your card!');
+    return;
+  }
+
+  studentCards[activeIdea] = { name, does, trained, wrong, notallowed };
+
+  const idea = IDEAS[activeIdea];
+  document.getElementById('sc-name').textContent = name;
+  document.getElementById('sc-tag').textContent = idea.emoji + ' ' + idea.name + ' · AI Inventor Card';
+  document.getElementById('sc-does').textContent = does;
+  document.getElementById('sc-trained').textContent = trained;
+  document.getElementById('sc-wrong').textContent = wrong;
+  document.getElementById('sc-notallowed').textContent = notallowed;
+
+  document.getElementById('fill-form').classList.remove('show');
+  document.getElementById('student-card-wrap').classList.add('show');
+  document.getElementById('student-card-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  buildGrid();
+  updateProgress();
+}
+
+function editCurrentCard() {
+  if (activeIdea) openForm(activeIdea);
+}
+
+function closeForm() {
+  activeIdea = null;
+  document.querySelectorAll('.idea-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('fill-form').classList.remove('show');
+  document.getElementById('student-card-wrap').classList.remove('show');
+}
+
+function updateProgress() {
+  const count = Object.keys(studentCards).length;
+  const banner = document.getElementById('progress-banner');
+  document.getElementById('progress').style.width = Math.min(count / 2, 1) * 100 + '%';
+
+  if (count >= 2) {
+    banner.textContent = `🎉 Cards completed: ${count} of 2 — you're done! Raise your hand and get ready to share your screen.`;
+    banner.classList.add('done');
+  } else {
+    banner.textContent = `Cards completed: ${count} of 2`;
+    banner.classList.remove('done');
+  }
+}
+
+buildGrid();
+updateProgress();
+</script>
+</body>
+</html>

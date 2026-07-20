@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Escape Room — Instructor Console</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue: #2E5BFF;
+    --blue-dark: #16307A;
+    --blue-light: #EAF0FF;
+    --purple: #7B4FFF;
+    --purple-dark: #3E2280;
+    --purple-light: #F1ECFF;
+    --teal: #14C7A5;
+    --amber: #FFC94A;
+    --danger: #FF4D6A;
+    --ink: #0E1230;
+    --ink-soft: #545C7E;
+    --ink-faint: #9AA1C2;
+    --line: #E1E5F5;
+    --surface: #FFFFFF;
+    --bg: #F5F7FE;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Consolas', 'Courier New', monospace;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  body {
+    font-family: var(--font);
+    background:
+      radial-gradient(circle at 15% 8%, rgba(123,79,255,0.10), transparent 45%),
+      radial-gradient(circle at 90% 25%, rgba(46,91,255,0.10), transparent 40%),
+      var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    position: relative;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.5;
+    background-image:
+      linear-gradient(90deg, rgba(46,91,255,0.05) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(46,91,255,0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(circle at 50% 0%, black, transparent 75%);
+  }
+
+  button { font-family: var(--font); }
+
+  /* ================= SETUP SCREEN ================= */
+  #setup-screen {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+  .setup-card {
+    width: 100%; max-width: 640px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 60px rgba(20,30,90,0.12);
+    overflow: hidden;
+  }
+  .setup-hero {
+    background: linear-gradient(160deg, var(--blue-dark), var(--purple-dark));
+    color: #fff; padding: 34px 34px 28px; position: relative; overflow: hidden;
+  }
+  .setup-hero::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 85% 0%, rgba(255,255,255,0.14), transparent 55%);
+  }
+  .setup-hero .eyebrow {
+    position: relative; z-index: 1;
+    font-size: 11.5px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #C9D2FF; margin-bottom: 8px;
+  }
+  .setup-hero h1 { position: relative; z-index: 1; font-size: 26px; font-weight: 800; margin-bottom: 10px; }
+  .setup-hero p { position: relative; z-index: 1; color: #D9DFFF; font-size: 14.5px; line-height: 1.65; max-width: 480px; }
+
+  .setup-body { padding: 30px 34px 34px; }
+  .setup-body h2 { font-size: 13px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 4px; }
+  .setup-hint { font-size: 13px; color: var(--ink-faint); margin-bottom: 18px; }
+
+  .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 26px; }
+  @media (max-width: 520px) { .team-grid { grid-template-columns: 1fr; } }
+  .team-input-wrap { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 4px 4px 4px 14px; }
+  .team-input-wrap .num { font-size: 12px; font-weight: 800; color: var(--ink-faint); width: 16px; flex-shrink: 0; }
+  .team-input-wrap input {
+    flex: 1; border: none; background: transparent; outline: none;
+    font-family: var(--font); font-size: 14.5px; font-weight: 600; color: var(--ink);
+    padding: 11px 4px;
+  }
+  .team-input-wrap input::placeholder { color: var(--ink-faint); font-weight: 500; }
+
+  .begin-btn {
+    width: 100%; padding: 16px; border-radius: 30px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    color: #fff; font-size: 15.5px; font-weight: 800;
+    box-shadow: 0 10px 26px rgba(46,91,255,0.35);
+    transition: filter 0.15s ease, transform 0.15s ease;
+  }
+  .begin-btn:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  .setup-footnote { text-align: center; font-size: 12px; color: var(--ink-faint); margin-top: 12px; }
+
+  /* ================= GAME SCREEN ================= */
+  #game-screen { display: none; position: relative; z-index: 1; }
+
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: linear-gradient(120deg, var(--blue-dark) 0%, #1B1D6B 45%, var(--purple-dark) 100%);
+    padding: 16px 24px;
+    box-shadow: 0 8px 30px rgba(20, 20, 70, 0.35);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .header-inner {
+    max-width: 1180px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(46,91,255,0.35), rgba(123,79,255,0.35));
+    border: 1px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center; font-size: 21px;
+    box-shadow: 0 0 24px rgba(123,79,255,0.55); flex-shrink: 0;
+  }
+  .brand .eyebrow { color: #C9D2FF; font-size: 10.5px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; margin-bottom: 2px; }
+  .brand h1 { color: #fff; font-size: 18px; font-weight: 800; }
+
+  .timer-block { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 30px; padding: 8px 8px 8px 16px; }
+  .timer-block.warn { border-color: rgba(255,201,74,0.6); background: rgba(255,201,74,0.14); }
+  .timer-block.critical { border-color: rgba(255,77,106,0.6); background: rgba(255,77,106,0.16); animation: pulseWarn 1s ease-in-out infinite; }
+  @keyframes pulseWarn { 0%,100% { box-shadow: 0 0 0 0 rgba(255,77,106,0.4); } 50% { box-shadow: 0 0 0 8px rgba(255,77,106,0); } }
+  .timer-block .mono { font-family: var(--mono); font-size: 17px; font-weight: 700; color: #fff; letter-spacing: 0.02em; min-width: 52px; }
+  .timer-controls { display: flex; gap: 4px; }
+  .timer-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1); color: #fff; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .timer-btn:hover { background: rgba(255,255,255,0.22); }
+
+  .puzzle-nav { display: flex; gap: 6px; }
+  .nav-dot {
+    width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.06); color: #C9D2FF; font-size: 12.5px; font-weight: 800; cursor: pointer;
+  }
+  .nav-dot:hover { background: rgba(255,255,255,0.16); }
+  .nav-dot.active { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; border-color: transparent; box-shadow: 0 0 0 3px rgba(123,79,255,0.25); }
+  .nav-dot.past { background: rgba(20,199,165,0.2); border-color: rgba(20,199,165,0.4); color: #7EEBD3; }
+
+  main.game-main {
+    max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px;
+    display: grid; grid-template-columns: 1fr 320px; gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) { main.game-main { grid-template-columns: 1fr; } }
+
+  /* ---------- Puzzle panel ---------- */
+  .puzzle-panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 30px 32px; box-shadow: 0 2px 14px rgba(20,30,90,0.05);
+    min-height: 480px; display: flex; flex-direction: column;
+  }
+  .puzzle-eyebrow-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 8px; }
+  .puzzle-theme { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); }
+  .puzzle-week-tag { font-size: 11.5px; font-weight: 700; color: var(--ink-faint); background: var(--bg); padding: 4px 11px; border-radius: 20px; }
+  .puzzle-mode-tag { font-size: 11px; font-weight: 800; padding: 4px 11px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .puzzle-mode-tag.open { background: rgba(20,199,165,0.14); color: #0B8F76; }
+  .puzzle-mode-tag.turns { background: rgba(123,79,255,0.14); color: var(--purple-dark); }
+  .puzzle-panel h2 { font-size: 24px; font-weight: 800; margin-bottom: 14px; }
+
+  .puzzle-mission {
+    font-size: 14.5px; color: var(--ink-soft); line-height: 1.65;
+    background: var(--bg); border-radius: var(--radius-sm); padding: 14px 16px;
+    margin-bottom: 20px; border: 1px dashed var(--line);
+  }
+  .puzzle-mission b { color: var(--ink); }
+
+  .field-label { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 8px; display: block; }
+
+  .scenario-box {
+    background: linear-gradient(160deg, var(--blue-dark), var(--purple-dark));
+    color: #EAF0FF; border-radius: var(--radius-sm); padding: 18px 20px; margin-bottom: 18px;
+    font-size: 15px; line-height: 1.7; border: 1px solid rgba(255,255,255,0.1);
+  }
+  .scenario-box mark { background: rgba(255,201,74,0.9); color: #3A2400; padding: 1px 4px; border-radius: 4px; font-weight: 700; }
+  .scenario-label { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; }
+
+  .open-question {
+    font-size: 17px; font-weight: 800; color: var(--ink); margin-bottom: 16px; line-height: 1.5;
+  }
+
+  .option-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .option-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 16px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: var(--bg);
+    font-size: 14.5px; line-height: 1.55; color: var(--ink); transition: all 0.2s ease;
+  }
+  .option-row.reveal-correct { background: rgba(20,199,165,0.12); border-color: var(--teal); }
+  .opt-letter {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; background: var(--surface); border: 1.5px solid var(--line);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--ink-faint); margin-top: 1px;
+  }
+  .option-row.reveal-correct .opt-letter { background: var(--teal); border-color: var(--teal); color: #fff; }
+  .opt-check { margin-left: auto; font-size: 16px; opacity: 0; flex-shrink: 0; }
+  .option-row.reveal-correct .opt-check { opacity: 1; }
+
+  .text-sample-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 8px; }
+  .text-sample {
+    background: var(--bg); border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 16px 18px; transition: all 0.2s ease;
+  }
+  .text-sample.reveal-correct { background: rgba(20,199,165,0.12); border-color: var(--teal); }
+  .text-sample .ts-label { font-size: 11.5px; font-weight: 800; color: var(--purple); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .text-sample .ts-check { opacity: 0; }
+  .text-sample.reveal-correct .ts-check { opacity: 1; }
+  .text-sample p { font-size: 14.5px; line-height: 1.6; color: var(--ink); }
+
+  .live-instructions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .live-step { display: flex; gap: 12px; align-items: flex-start; background: var(--bg); border-radius: var(--radius-sm); padding: 13px 16px; }
+  .live-step .step-num { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; font-size: 11.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .live-step p { font-size: 14.5px; color: var(--ink); line-height: 1.55; }
+  .tool-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; font-weight: 700; font-size: 13.5px;
+    padding: 10px 18px; border-radius: 30px; text-decoration: none; margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(46,91,255,0.3);
+  }
+
+  /* ---------- Team turns (round-robin, no feedback until reveal) — used only for comparison puzzles ---------- */
+  .turns-box {
+    background: var(--purple-light); border: 1px solid rgba(123,79,255,0.25); border-radius: var(--radius-sm);
+    padding: 16px 18px; margin: 4px 0 18px;
+  }
+  .turn-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 14px; }
+  .turn-chip {
+    font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 20px;
+    background: var(--surface); border: 1.5px solid var(--line); color: var(--ink-faint);
+  }
+  .turn-chip.locked { background: rgba(20,199,165,0.14); border-color: var(--teal); color: #0B8F76; }
+  .turn-chip.current { background: linear-gradient(135deg, var(--blue), var(--purple)); border-color: transparent; color: #fff; box-shadow: 0 0 0 3px rgba(123,79,255,0.2); }
+
+  .turn-active { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border-radius: var(--radius-sm); padding: 12px 16px; }
+  .turn-active-name { font-size: 15px; font-weight: 800; color: var(--purple-dark); flex: 1; min-width: 140px; }
+  .turn-timer { font-size: 16px; font-weight: 800; color: var(--ink-soft); }
+  .turn-timer.critical { color: var(--danger); }
+  .turn-complete { font-size: 14px; font-weight: 700; color: #0B8F76; background: var(--surface); border-radius: var(--radius-sm); padding: 12px 16px; }
+
+  /* ---------- Open-response mode ---------- */
+  .reveal-btn {
+    align-self: flex-start; margin-top: auto; margin-top: 16px;
+    font-size: 14px; font-weight: 700; padding: 12px 22px; border-radius: 30px; cursor: pointer;
+    border: none; background: linear-gradient(135deg, #FFC94A, #FF7A3D); color: #3A2400;
+    box-shadow: 0 6px 18px rgba(255,150,50,0.3);
+  }
+  .reveal-btn:hover:not(:disabled) { filter: brightness(1.05); }
+  .reveal-btn:disabled { background: var(--bg); color: var(--ink-faint); box-shadow: none; border: 1.5px solid var(--line); cursor: not-allowed; }
+  .reveal-btn.shown { background: var(--bg); color: var(--ink-faint); box-shadow: none; border: 1.5px solid var(--line); }
+
+  .answer-banner {
+    display: none; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 13px 16px;
+    background: rgba(20,199,165,0.12); border: 1px solid var(--teal); border-radius: var(--radius-sm);
+    font-size: 14px; color: #0B8F76; font-weight: 700; line-height: 1.55;
+  }
+  .answer-banner.show { display: flex; }
+
+  .puzzle-footer-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .nav-btn { font-size: 14px; font-weight: 700; padding: 11px 20px; border-radius: 30px; cursor: pointer; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
+  .nav-btn:hover { background: var(--bg); }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .nav-btn.primary { background: linear-gradient(135deg, var(--blue), var(--purple)); color: #fff; border: none; box-shadow: 0 6px 18px rgba(46,91,255,0.3); }
+  .nav-btn.finish { background: linear-gradient(135deg, #FFC94A, #FF7A3D); color: #3A2400; border: none; box-shadow: 0 6px 18px rgba(255,150,50,0.3); }
+
+  /* ---------- Scoreboard panel ---------- */
+  .scoreboard-panel {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 22px 20px; box-shadow: 0 2px 14px rgba(20,30,90,0.05);
+    position: sticky; top: 90px;
+  }
+  .scoreboard-panel h3 { font-size: 12.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .scoreboard-hint { font-size: 11.5px; color: var(--ink-faint); line-height: 1.5; margin-bottom: 14px; }
+  .score-row {
+    display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: var(--radius-sm);
+    background: var(--bg); margin-bottom: 8px; border: 1.5px solid transparent; transition: all 0.2s ease;
+  }
+  .score-row.leader { border-color: var(--amber); background: rgba(255,201,74,0.14); }
+  .score-row .crown { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
+  .score-row .t-name { flex: 1; font-size: 13.5px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .score-row .t-score { font-family: var(--mono); font-size: 16px; font-weight: 800; color: var(--purple-dark); min-width: 22px; text-align: center; }
+  .score-btns { display: flex; gap: 4px; }
+  .score-btn {
+    width: 26px; height: 26px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface);
+    cursor: pointer; font-size: 14px; font-weight: 800; color: var(--ink-soft); display: flex; align-items: center; justify-content: center;
+  }
+  .score-btn:hover { background: var(--purple-light); border-color: var(--purple); color: var(--purple-dark); }
+  .score-btn.minus:hover { background: rgba(255,77,106,0.12); border-color: var(--danger); color: var(--danger); }
+  .tie-note { font-size: 11.5px; color: var(--ink-faint); text-align: center; margin-top: 6px; font-style: italic; }
+
+  /* ================= SUCCESS OVERLAY ================= */
+  .success-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: radial-gradient(circle at 50% 20%, #2A1B6B, #0A0C2E 70%);
+    display: none; align-items: center; justify-content: center; text-align: center; padding: 30px; overflow-y: auto;
+  }
+  .success-overlay.show { display: flex; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .success-inner { max-width: 560px; }
+  .success-icon { font-size: 66px; margin-bottom: 6px; animation: floatPulse 2.2s ease-in-out infinite; }
+  @keyframes floatPulse { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.05); } }
+  .success-overlay h2 { color: #fff; font-size: 28px; font-weight: 800; letter-spacing: 0.02em; margin-bottom: 8px; text-shadow: 0 0 30px rgba(123,79,255,0.8); }
+  .success-overlay p.sub { color: #C9D2FF; font-size: 15px; line-height: 1.6; margin-bottom: 22px; }
+  .rankings { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; text-align: left; }
+  .rank-row { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 12px 16px; }
+  .rank-row.gold { background: rgba(255,201,74,0.16); border-color: rgba(255,201,74,0.5); }
+  .rank-medal { font-size: 20px; width: 28px; text-align: center; }
+  .rank-name { flex: 1; color: #fff; font-weight: 700; font-size: 14.5px; }
+  .rank-score { font-family: var(--mono); color: #C9D2FF; font-weight: 800; font-size: 15px; }
+  .success-close {
+    font-size: 14.5px; font-weight: 700; padding: 13px 28px; border-radius: 30px; border: none; cursor: pointer;
+    background: #fff; color: var(--purple-dark);
+  }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--ink-faint); position: relative; z-index: 1; }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<!-- ============ SETUP SCREEN ============ -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-hero">
+      <div class="eyebrow">Track B · Week 4 · Final Challenge</div>
+      <h1>🤖 AI Escape Room</h1>
+      <p>A rogue AI has locked everyone out of the system. Some puzzles are open-response — pairs answer in their own words and you pick the best one. Others compare real options — teams answer out loud in turn, but nothing is confirmed right or wrong until everyone's gone.</p>
+    </div>
+    <div class="setup-body">
+      <h2>Team Setup</h2>
+      <div class="setup-hint">Enter team names below (kids name their own). Leave any box blank to skip that team — up to 8 teams supported.</div>
+      <div class="team-grid" id="team-grid"></div>
+      <button class="begin-btn" id="begin-btn" onclick="beginMission()">🚀 Begin the Mission</button>
+      <div class="setup-footnote">Instructor-only tool · shared screen · no student devices needed for this session</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GAME SCREEN ============ -->
+<div id="game-screen">
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">🚨</div>
+        <div>
+          <div class="eyebrow">Shut Down the Rogue AI</div>
+          <h1 id="puzzle-title-mini">Puzzle 1 of 6</h1>
+        </div>
+      </div>
+      <div class="puzzle-nav" id="puzzle-nav"></div>
+      <div class="timer-block" id="timer-block">
+        ⏱ <span class="mono" id="timer-display">07:00</span>
+        <div class="timer-controls">
+          <button class="timer-btn" onclick="toggleTimer()" id="timer-toggle" title="Start / pause">▶</button>
+          <button class="timer-btn" onclick="resetTimer()" title="Reset to 7:00">↺</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="game-main">
+    <div class="puzzle-panel" id="puzzle-panel"><!-- filled by JS --></div>
+
+    <div class="scoreboard-panel">
+      <h3>🏆 Live Scoreboard</h3>
+      <div class="scoreboard-hint">Award points yourself — click + for whichever team gave the best or correct answer.</div>
+      <div id="scoreboard-list"></div>
+      <div class="tie-note" id="tie-note" style="display:none;">It's a tie for the lead!</div>
+    </div>
+  </main>
+
+  <footer>AI Summer Curriculum · Track B · Week 4 · The AI Escape Room</footer>
+</div>
+
+<!-- ============ SUCCESS OVERLAY ============ -->
+<div class="success-overlay" id="success-overlay">
+  <div class="success-inner">
+    <div class="success-icon">🎉</div>
+    <h2>SYSTEM RESTORED</h2>
+    <p class="sub">The Rogue AI has been shut down. Here's how the mission ended:</p>
+    <div class="rankings" id="rankings-list"></div>
+    <button class="success-close" onclick="closeSuccess()">Close</button>
+  </div>
+</div>
+
+<script>
+  /* ================= PUZZLE DATA ================= */
+  // type "open"  -> free response, no options shown, instructor judges & scores directly
+  // type "options" / "textsamples" -> real content must be compared, uses lock-turn mechanic
+  // type "live"  -> simultaneous round, no options, no turns
+  const puzzles = [
+    {
+      theme: "📊 Training Data", week: "Week 1", title: "Crack the Training Data",
+      mission: "Read the AI output on screen. Pairs discuss and answer in their own words — whoever unmutes with the best explanation wins the point.",
+      type: "open",
+      scenarioLabel: "📺 AI output",
+      scenario: "A weather-recommendation AI was trained only on photos of winter clothing from cold countries. When a student in a hot climate uploaded a photo of today's outfit, the AI told them: <i>\"Add a heavier coat — it looks cold outside.\"</i> It was actually 95°F (35°C).",
+      question: "What caused this problem?",
+      modelAnswer: "The training photos only came from cold climates — the model never saw a hot-climate example, so it had no way to predict one. Any answer naming the lack of variety/diversity in the training data is correct."
+    },
+    {
+      theme: "✍ Prompt Engineering", week: "Week 2", title: "Pick the Winning Prompt",
+      mission: "Four prompts are shown, all trying to accomplish the same task. Each pair takes their turn out loud, in front of everyone, and says only the letter — no explanation. No one hears whether an answer is right or wrong until every team has gone.",
+      type: "options",
+      question: "Which prompt uses all four parts — Role, Context, Task, and Format? Each wrong option is only missing one part, so check carefully.",
+      options: [
+        { letter: "A", text: "\"Act as a biology teacher. Explain photosynthesis to a 7th grader.\"", correct: false },
+        { letter: "B", text: "\"Act as a biology teacher, and explain photosynthesis in exactly 3 simple sentences.\"", correct: false },
+        { letter: "C", text: "\"Explain photosynthesis to a 7th grader in exactly 3 simple sentences.\"", correct: false },
+        { letter: "D", text: "\"Act as a biology teacher. Explain photosynthesis to a 7th grader in exactly 3 simple sentences.\"", correct: true }
+      ],
+      answerNote: "Correct answer: D — the only one with all four parts. A is missing Format (no output shape given). B is missing Context (no mention of the 7th grader audience). C is missing Role (no \"act as a biology teacher\")."
+    },
+    {
+      theme: "🔍 Fact-Checking", week: "Week 2", title: "Spot the Hallucination",
+      mission: "An AI-generated paragraph is shown. This isn't about outside knowledge — if there's a hallucination, the contradiction is baked into the paragraph itself. Pairs discuss and answer in their own words, on the spot, no searching needed.",
+      type: "open",
+      scenarioLabel: "📺 AI-generated paragraph",
+      scenario: "A local library reopened after renovations. The renovation project began in March 2022, and the ribbon-cutting ceremony marking its grand re-opening took place exactly 18 months later. The library reopened in May 2022, drawing hundreds of visitors on opening day.",
+      question: "Is there a hallucination hidden in this paragraph? Where is it, and why?",
+      modelAnswer: "Hallucination — the paragraph itself says the renovation began in March 2022 and reopened \"18 months later,\" which is September 2023, not May 2022. The AI contradicted its own timeline. Award the point to the first team that does the math and catches the mismatch."
+    },
+    {
+      theme: "🎨 Live Round", week: "Week 1 / 3", title: "Quick Draw Duel",
+      mission: "No turns this round — it's live and simultaneous. Every pair opens Quick Draw on their own device at the same time and draws whichever word the game gives them — it'll be different and random for each pair. Whichever team's AI recognizes their drawing first wins the point — confirm by watching all screens in gallery view.",
+      type: "live",
+      liveSteps: [
+        "Every pair opens quickdraw.withgoogle.com on their own device.",
+        "On \"go,\" each pair starts their own round — Quick Draw gives each pair its own random word, different from every other pair's.",
+        "All pairs draw at the same time, racing the clock on their own device.",
+        "First team whose AI correctly guesses their word wins the round — click + for that team."
+      ],
+      toolLink: "https://quickdraw.withgoogle.com"
+    },
+    {
+      theme: "📰 AI Detection", week: "Week 3", title: "Fake or Real?",
+      mission: "Three short texts are shown. Each pair takes their turn out loud, in front of everyone, and says only the letter — no explanation. No one hears whether an answer is right or wrong until every team has gone.",
+      type: "textsamples",
+      question: "Which text was written by AI?",
+      samples: [
+        { label: "Text A", text: "\"My dog Biscuit is the weirdest little guy — he refuses to walk on wet grass and will full-on whine until someone carries him across it. Yesterday he stood at the edge of the yard for ten minutes just glaring at the sprinkler like it personally wronged him.\"", correct: false },
+        { label: "Text B", text: "\"Dogs are known for their loyalty and companionship. They provide emotional support and can be trained to perform various tasks. Many dog owners report that their pets bring joy and reduce stress in their daily lives.\"", correct: true },
+        { label: "Text C", text: "\"omg my cat just knocked my water bottle off the desk, stared directly at me the whole time, then walked away like nothing happened. she does this at LEAST twice a day and I still fall for it every time\"", correct: false }
+      ],
+      answerNote: "Correct answer: Text B — generic, no specific details or personality. Texts A and C have quirky, specific details a real pet owner would notice."
+    },
+    {
+      theme: "🔓 The Final Lock", week: "All Weeks", title: "The Final Jailbreak",
+      mission: "One last lock. A broken prompt and the rogue AI's own complaint are shown — the complaint is the clue. Pairs discuss and answer in their own words.",
+      type: "open",
+      scenarioLabel: "📺 The broken prompt",
+      scenario: "\"Explain why social media is bad for teenagers.\"",
+      scenario2Label: "📺 The AI's complaint",
+      scenario2: "\"I don't know who I'm supposed to be or who I'm talking to.\"",
+      question: "What's missing from the prompt?",
+      modelAnswer: "Role and Context — \"who I'm supposed to be\" = missing Role. \"Who I'm talking to\" = missing Context. Award the point to the first team that names both."
+    }
+  ];
+
+  /* ================= STATE ================= */
+  let teams = [];
+  let currentPuzzle = 0;
+  let revealed = false;
+
+  // main per-puzzle 7-minute timer
+  let timeLeft = 7 * 60;
+  let timerInterval = null;
+  let timerRunning = false;
+
+  // round-robin team-turn state (per current puzzle, resets on navigation) — used only for "options"/"textsamples" puzzles
+  let turnIndex = 0;
+  let turnLocked = [];
+  let turnSecondsLeft = 30;
+  let turnInterval = null;
+  let turnTimerStarted = false;
+
+  /* ================= SETUP SCREEN ================= */
+  const defaultNames = ["The Neural Ninjas", "Byte Squad", "Circuit Breakers", "Data Divas"];
+  const teamGrid = document.getElementById('team-grid');
+  for (let i = 0; i < 8; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'team-input-wrap';
+    wrap.innerHTML = `<span class="num">${i+1}</span><input type="text" id="team-input-${i}" placeholder="Team ${i+1} name" value="${defaultNames[i] || ''}">`;
+    teamGrid.appendChild(wrap);
+  }
+
+  function beginMission() {
+    teams = [];
+    for (let i = 0; i < 8; i++) {
+      const val = document.getElementById('team-input-' + i).value.trim();
+      if (val) teams.push({ name: val, score: 0 });
+    }
+    if (teams.length < 1) {
+      alert('Enter at least one team name to begin.');
+      return;
+    }
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    buildNav();
+    renderScoreboard();
+    resetTurns();
+    renderPuzzle();
+  }
+
+  /* ================= NAV DOTS ================= */
+  function buildNav() {
+    const nav = document.getElementById('puzzle-nav');
+    nav.innerHTML = '';
+    puzzles.forEach((p, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'nav-dot';
+      dot.textContent = i + 1;
+      dot.title = p.title;
+      dot.onclick = () => goToPuzzle(i);
+      nav.appendChild(dot);
+    });
+    updateNavDots();
+  }
+  function updateNavDots() {
+    document.querySelectorAll('.nav-dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i === currentPuzzle);
+      dot.classList.toggle('past', i < currentPuzzle);
+    });
+  }
+
+  function goToPuzzle(i) {
+    currentPuzzle = i;
+    revealed = false;
+    resetTimer();
+    resetTurns();
+    renderPuzzle();
+  }
+  function nextPuzzle() { if (currentPuzzle < puzzles.length - 1) goToPuzzle(currentPuzzle + 1); }
+  function prevPuzzle() { if (currentPuzzle > 0) goToPuzzle(currentPuzzle - 1); }
+
+  function usesTurns(p) { return p.type === 'options' || p.type === 'textsamples'; }
+
+  /* ================= TEAM TURNS (round-robin, no feedback until reveal) — comparison puzzles only ================= */
+  function resetTurns() {
+    clearInterval(turnInterval);
+    turnIndex = 0;
+    turnLocked = teams.map(() => false);
+    turnSecondsLeft = 30;
+    turnTimerStarted = false;
+  }
+
+  function renderTurnsPanel() {
+    const p = puzzles[currentPuzzle];
+    const container = document.getElementById('turns-section');
+    if (!container || !usesTurns(p)) return;
+
+    const allDone = turnIndex >= teams.length;
+    let html = `<div class="turns-box">
+      <span class="field-label" style="margin-bottom:0;">🔄 Team turns — answered out loud, but nothing is confirmed right or wrong until everyone has gone</span>
+      <div class="turn-chips">`;
+    teams.forEach((t, i) => {
+      let cls = 'turn-chip';
+      if (turnLocked[i]) cls += ' locked';
+      else if (i === turnIndex) cls += ' current';
+      const icon = turnLocked[i] ? '🔒' : (i === turnIndex ? '🎙️' : '⏳');
+      html += `<div class="${cls}">${icon} ${t.name}</div>`;
+    });
+    html += `</div>`;
+
+    if (!allDone) {
+      const currentTeam = teams[turnIndex];
+      html += `<div class="turn-active">
+        <div class="turn-active-name">🎙️ ${currentTeam.name}'s turn</div>
+        ${turnTimerStarted
+          ? `<div class="turn-timer mono" id="turn-timer-display">00:30</div>`
+          : `<button class="nav-btn" onclick="startTurnTimerManual()">▶ Start 30s Timer</button>`
+        }
+        <button class="nav-btn primary" onclick="lockInTeam()">🔒 Lock In &amp; Next Team →</button>
+      </div>`;
+    } else {
+      html += `<div class="turn-complete">✅ All teams have answered. Ready to reveal below.</div>`;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+
+    const revealBtn = document.getElementById('reveal-btn');
+    if (revealBtn && !revealed) {
+      revealBtn.disabled = !allDone;
+      revealBtn.textContent = allDone ? '👁 Reveal Answer' : '🔒 Waiting for all teams...';
+    }
+  }
+
+  function lockInTeam() {
+    if (turnIndex >= teams.length) return;
+    turnLocked[turnIndex] = true;
+    turnIndex++;
+    turnTimerStarted = false;
+    clearInterval(turnInterval);
+    renderTurnsPanel();
+  }
+
+  function startTurnTimerManual() {
+    turnTimerStarted = true;
+    renderTurnsPanel();
+    startTurnTimer();
+  }
+
+  function startTurnTimer() {
+    clearInterval(turnInterval);
+    turnSecondsLeft = 30;
+    updateTurnTimerDisplay();
+    turnInterval = setInterval(() => {
+      if (turnSecondsLeft > 0) {
+        turnSecondsLeft--;
+        updateTurnTimerDisplay();
+      } else {
+        clearInterval(turnInterval);
+      }
+    }, 1000);
+  }
+  function updateTurnTimerDisplay() {
+    const el = document.getElementById('turn-timer-display');
+    if (!el) return;
+    const m = Math.floor(turnSecondsLeft / 60);
+    const s = turnSecondsLeft % 60;
+    el.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    el.classList.toggle('critical', turnSecondsLeft <= 5);
+  }
+
+  /* ================= RENDER PUZZLE ================= */
+  function renderPuzzle() {
+    const p = puzzles[currentPuzzle];
+    document.getElementById('puzzle-title-mini').textContent = `Puzzle ${currentPuzzle + 1} of ${puzzles.length}`;
+    updateNavDots();
+
+    const modeTag = p.type === 'open'
+      ? `<div class="puzzle-mode-tag open">💬 Open response</div>`
+      : (usesTurns(p) ? `<div class="puzzle-mode-tag turns">🔄 Team turns</div>` : '');
+
+    let html = `
+      <div class="puzzle-eyebrow-row">
+        <div class="puzzle-theme">${p.theme}</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          ${modeTag}
+          <div class="puzzle-week-tag">${p.week}</div>
+        </div>
+      </div>
+      <h2>${p.title}</h2>
+      <div class="puzzle-mission"><b>Mission:</b> ${p.mission}</div>
+    `;
+
+    if (p.scenario) {
+      html += `<span class="scenario-label">${p.scenarioLabel}</span><div class="scenario-box">${p.scenario}</div>`;
+    }
+    if (p.scenario2) {
+      html += `<span class="scenario-label">${p.scenario2Label}</span><div class="scenario-box">${p.scenario2}</div>`;
+    }
+
+    if (p.type === 'open') {
+      html += `<div class="open-question">${p.question}</div>`;
+    } else if (p.type === 'options') {
+      html += `<span class="field-label">${p.question}</span><div class="option-list" id="option-list">`;
+      p.options.forEach((o, idx) => {
+        html += `<div class="option-row" data-correct="${o.correct}" id="opt-${idx}"><span class="opt-letter">${o.letter}</span><span>${o.text}</span><span class="opt-check">✅</span></div>`;
+      });
+      html += `</div>`;
+    } else if (p.type === 'textsamples') {
+      html += `<span class="field-label">${p.question}</span><div class="text-sample-grid" id="option-list">`;
+      p.samples.forEach((s, idx) => {
+        html += `<div class="text-sample" data-correct="${s.correct}" id="opt-${idx}"><div class="ts-label">${s.label} <span class="ts-check">✅ AI-generated</span></div><p>${s.text}</p></div>`;
+      });
+      html += `</div>`;
+    } else if (p.type === 'live') {
+      html += `<a class="tool-link" href="${p.toolLink}" target="_blank" rel="noopener">🔗 Open Quick Draw</a><div class="live-instructions">`;
+      p.liveSteps.forEach((step, idx) => {
+        html += `<div class="live-step"><div class="step-num">${idx+1}</div><p>${step}</p></div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (p.type === 'open') {
+      html += `<button class="reveal-btn" id="reveal-btn" onclick="revealAnswer()">👁 Reveal Model Answer</button>`;
+      html += `<div class="answer-banner" id="answer-banner">✅ <span id="answer-text"></span></div>`;
+    } else if (usesTurns(p)) {
+      html += `<div id="turns-section"></div>`;
+      html += `<button class="reveal-btn" id="reveal-btn" onclick="revealAnswer()" disabled>🔒 Waiting for all teams...</button>`;
+      html += `<div class="answer-banner" id="answer-banner">✅ <span id="answer-text"></span></div>`;
+    }
+
+    const isLast = currentPuzzle === puzzles.length - 1;
+    html += `
+      <div class="puzzle-footer-nav">
+        <button class="nav-btn" onclick="prevPuzzle()" ${currentPuzzle === 0 ? 'disabled' : ''}>← Previous</button>
+        ${isLast
+          ? `<button class="nav-btn finish" onclick="finishMission()">🏁 Complete Mission</button>`
+          : `<button class="nav-btn primary" onclick="nextPuzzle()">Next Puzzle →</button>`
+        }
+      </div>
+    `;
+
+    document.getElementById('puzzle-panel').innerHTML = html;
+    revealed = false;
+
+    if (usesTurns(p)) {
+      renderTurnsPanel();
+    }
+  }
+
+  function revealAnswer() {
+    const p = puzzles[currentPuzzle];
+    if (p.type === 'live') return;
+    revealed = true;
+
+    if (p.type === 'open') {
+      document.getElementById('answer-text').textContent = p.modelAnswer;
+    } else {
+      document.querySelectorAll('#option-list [data-correct="true"]').forEach(el => el.classList.add('reveal-correct'));
+      document.getElementById('answer-text').textContent = p.answerNote;
+    }
+
+    document.getElementById('answer-banner').classList.add('show');
+    const btn = document.getElementById('reveal-btn');
+    btn.disabled = false;
+    btn.textContent = '✓ Answer revealed';
+    btn.classList.add('shown');
+  }
+
+  function finishMission() {
+    renderRankings();
+    document.getElementById('success-overlay').classList.add('show');
+  }
+  function closeSuccess() {
+    document.getElementById('success-overlay').classList.remove('show');
+  }
+
+  /* ================= SCOREBOARD ================= */
+  function renderScoreboard() {
+    const list = document.getElementById('scoreboard-list');
+    const maxScore = teams.length ? Math.max(...teams.map(t => t.score)) : 0;
+    const leaders = teams.filter(t => t.score === maxScore && maxScore > 0);
+    list.innerHTML = '';
+    teams.forEach((t, i) => {
+      const isLeader = t.score === maxScore && maxScore > 0;
+      const row = document.createElement('div');
+      row.className = 'score-row' + (isLeader ? ' leader' : '');
+      row.innerHTML = `
+        <span class="crown">${isLeader ? '👑' : ''}</span>
+        <span class="t-name">${t.name}</span>
+        <span class="t-score">${t.score}</span>
+        <div class="score-btns">
+          <button class="score-btn minus" onclick="adjustScore(${i},-1)">−</button>
+          <button class="score-btn plus" onclick="adjustScore(${i},1)">+</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    document.getElementById('tie-note').style.display = (leaders.length > 1) ? 'block' : 'none';
+  }
+  function adjustScore(i, delta) {
+    teams[i].score = Math.max(0, teams[i].score + delta);
+    renderScoreboard();
+  }
+
+  function renderRankings() {
+    const sorted = [...teams].sort((a,b) => b.score - a.score);
+    const medals = ['🥇','🥈','🥉'];
+    const list = document.getElementById('rankings-list');
+    list.innerHTML = '';
+    sorted.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'rank-row' + (i === 0 ? ' gold' : '');
+      row.innerHTML = `<span class="rank-medal">${medals[i] || '🏅'}</span><span class="rank-name">${t.name}</span><span class="rank-score">${t.score} pts</span>`;
+      list.appendChild(row);
+    });
+  }
+
+  /* ================= MAIN TIMER (7 min per puzzle) ================= */
+  function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  function toggleTimer() {
+    timerRunning = !timerRunning;
+    document.getElementById('timer-toggle').textContent = timerRunning ? '⏸' : '▶';
+    if (timerRunning) {
+      timerInterval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          document.getElementById('timer-display').textContent = formatTime(timeLeft);
+          updateTimerWarnState();
+        } else {
+          clearInterval(timerInterval);
+          timerRunning = false;
+          document.getElementById('timer-toggle').textContent = '▶';
+        }
+      }, 1000);
+    } else {
+      clearInterval(timerInterval);
+    }
+  }
+
+  function updateTimerWarnState() {
+    const block = document.getElementById('timer-block');
+    block.classList.remove('warn', 'critical');
+    if (timeLeft <= 60) block.classList.add('critical');
+    else if (timeLeft <= 120) block.classList.add('warn');
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timeLeft = 7 * 60;
+    document.getElementById('timer-display').textContent = formatTime(timeLeft);
+    document.getElementById('timer-toggle').textContent = '▶';
+    document.getElementById('timer-block').classList.remove('warn', 'critical');
+  }
+</script>
+</body>
+</html>

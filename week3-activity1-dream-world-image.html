@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream World Image Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 14px; --radius-lg: 18px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 24px; font-weight: 800; color: #fff; }
+  header .header-left p { font-size: 14px; color: #D8D5F5; margin-top: 4px; }
+  .pill { font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.16); color: #fff; text-decoration: none; }
+
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; background: var(--purple); transition: width 0.3s ease; width: 0%; }
+
+  main { max-width: 800px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  .intro { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 24px; text-align: center; }
+  .intro h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--purple-dark); }
+  .intro p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px; }
+  .tool-link { display: inline-flex; align-items: center; gap: 6px; background: var(--purple); color: #fff; font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 30px; text-decoration: none; box-shadow: 0 3px 0 var(--purple-dark); }
+
+  .theme-picker { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 16px; }
+  .theme-chip { font-family: var(--font); font-size: 13.5px; font-weight: 700; padding: 9px 16px; border-radius: 30px; border: 2px solid var(--border-strong); background: var(--surface-alt); color: var(--text); cursor: pointer; transition: transform 0.1s; }
+  .theme-chip:active { transform: scale(0.96); }
+  .theme-chip.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+  .round-tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .round-tab { font-family: var(--font); font-size: 14px; font-weight: 700; padding: 10px 18px; border-radius: 30px; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .round-tab.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .round-tab .rnum { width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .round-tab.active .rnum { background: rgba(255,255,255,0.25); }
+  .round-tab.seen:not(.active) { background: var(--teal-light); border-color: #9FDDC4; color: var(--teal); }
+
+  .round-panel { border-radius: var(--radius-lg); padding: 24px; border: 2px solid; margin-bottom: 20px; }
+  .rp-1 { background: var(--coral-light); border-color: #EFC4AC; }
+  .rp-2 { background: var(--gold-light); border-color: #E8CE93; }
+  .rp-3 { background: var(--teal-light); border-color: #9FDDC4; }
+
+  .panel-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .rp-1 .panel-label { color: var(--coral); }
+  .rp-2 .panel-label { color: #8a5c00; }
+  .rp-3 .panel-label { color: var(--teal); }
+  .word-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: rgba(255,255,255,0.7); text-transform: none; letter-spacing: 0; }
+
+  .compare-prompt { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; }
+  .compare-prompt .txt { font-size: 15.5px; font-style: italic; color: var(--text); line-height: 1.5; }
+
+  .reveal-btn-wrap { text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn-reveal { font-family: var(--font); font-size: 15px; font-weight: 800; padding: 12px 24px; border-radius: 30px; cursor: pointer; border: none; color: #fff; box-shadow: 0 3px 0 rgba(0,0,0,0.15); }
+  .rp-1 .btn-reveal { background: var(--coral); }
+  .rp-2 .btn-reveal { background: var(--gold); }
+  .rp-3 .btn-reveal { background: var(--teal); }
+  .btn-reveal:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+  .btn-reveal.done { opacity: 0.55; }
+
+  .btn-reset-round { font-family: var(--font); font-size: 13.5px; font-weight: 700; padding: 10px 18px; border-radius: 30px; cursor: pointer; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text-secondary); display: none; }
+  .btn-reset-round.show { display: inline-block; }
+  .btn-reset-round:hover { background: var(--surface-alt); }
+
+  .result-details { display: none; margin-top: 16px; }
+  .result-details.show { display: block; animation: pop 0.25s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+  .ingredient-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .ingredient-tag { font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: 20px; display: flex; align-items: center; gap: 4px; }
+  .ingredient-tag.yes { background: rgba(255,255,255,0.85); }
+  .rp-1 .ingredient-tag.yes { color: var(--coral); }
+  .rp-2 .ingredient-tag.yes { color: #8a5c00; }
+  .rp-3 .ingredient-tag.yes { color: var(--teal); }
+  .ingredient-tag.no { background: rgba(255,255,255,0.35); color: var(--text-muted); text-decoration: line-through; }
+
+  .compare-why { font-size: 13.5px; line-height: 1.55; background: rgba(255,255,255,0.55); border-radius: var(--radius); padding: 10px 14px; }
+  .rp-1 .compare-why { color: #7a3218; }
+  .rp-2 .compare-why { color: #5c3d00; }
+  .rp-3 .compare-why { color: #0a4a3a; }
+
+  .global-reset-wrap { text-align: center; margin-bottom: 18px; }
+  .btn-global-reset { font-family: var(--font); font-size: 13px; font-weight: 700; padding: 8px 16px; border-radius: 30px; cursor: pointer; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text-secondary); }
+  .btn-global-reset:hover { background: var(--surface-alt); }
+
+  .discuss { background: var(--gold-light); border: 2px solid #E8CE93; border-radius: var(--radius-lg); padding: 20px 22px; margin-top: 10px; }
+  .discuss h3 { font-size: 15px; font-weight: 800; color: var(--gold); margin-bottom: 12px; text-align: center; }
+  .discuss ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .discuss li { font-size: 14.5px; color: #6b4f0f; line-height: 1.5; background: rgba(255,255,255,0.5); border-radius: var(--radius); padding: 10px 14px; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>🎨 Dream World Image Generator</h1>
+    <p>Track A · Week 3 · Activity 1 — Watch a prompt improve, round by round</p>
+  </div>
+  <a class="pill" href="https://firefly.adobe.com" target="_blank" rel="noopener">🔗 firefly.adobe.com</a>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<main>
+  <div class="intro">
+    <h2>Same idea. Three tries. Watch it get better!</h2>
+    <p>Pick a theme, then step through all 3 rounds. Each one adds more detail than the last — tap reveal to see what's included, and reset anytime to look again.</p>
+    <a class="tool-link" href="https://firefly.adobe.com" target="_blank" rel="noopener">🚀 Open Adobe Firefly</a>
+    <div class="theme-picker">
+      <button class="theme-chip active" data-theme="fantasy" onclick="pickTheme(this)">🏰 A fantasy world</button>
+      <button class="theme-chip" data-theme="bedroom" onclick="pickTheme(this)">🛏️ My dream bedroom</button>
+      <button class="theme-chip" data-theme="pet" onclick="pickTheme(this)">🐾 An imaginary pet</button>
+      <button class="theme-chip" data-theme="creature" onclick="pickTheme(this)">👾 An invented creature</button>
+    </div>
+  </div>
+
+  <div class="round-tabs" id="round-tabs">
+    <button class="round-tab active" data-r="1" onclick="goRound(1)"><span class="rnum">1</span> One word</button>
+    <button class="round-tab" data-r="2" onclick="goRound(2)"><span class="rnum">2</span> Ten words</button>
+    <button class="round-tab" data-r="3" onclick="goRound(3)"><span class="rnum">3</span> Full sentence</button>
+  </div>
+
+  <div class="global-reset-wrap">
+    <button class="btn-global-reset" onclick="resetAll()">🔄 Reset all 3 rounds</button>
+  </div>
+
+  <div class="round-panel rp-1" id="panel-1">
+    <div class="panel-label">😕 Round 1 — Just one word <span class="word-badge" id="count-1"></span></div>
+    <div class="compare-prompt"><span class="txt" id="prompt-1"></span></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-1" onclick="revealRound(1)">✨ See what's included</button>
+      <button class="btn-reset-round" id="reset-1" onclick="resetRound(1)">🔄 Reset this round</button>
+    </div>
+    <div class="result-details" id="details-1">
+      <div class="ingredient-list" id="ingredients-1"></div>
+      <div class="compare-why" id="why-1"></div>
+    </div>
+  </div>
+
+  <div class="round-panel rp-2" id="panel-2">
+    <div class="panel-label">🤔 Round 2 — About ten words <span class="word-badge" id="count-2"></span></div>
+    <div class="compare-prompt"><span class="txt" id="prompt-2"></span></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-2" onclick="revealRound(2)">✨ See what's included</button>
+      <button class="btn-reset-round" id="reset-2" onclick="resetRound(2)">🔄 Reset this round</button>
+    </div>
+    <div class="result-details" id="details-2">
+      <div class="ingredient-list" id="ingredients-2"></div>
+      <div class="compare-why" id="why-2"></div>
+    </div>
+  </div>
+
+  <div class="round-panel rp-3" id="panel-3">
+    <div class="panel-label">⭐ Round 3 — A full sentence <span class="word-badge" id="count-3"></span></div>
+    <div class="compare-prompt"><span class="txt" id="prompt-3"></span></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-3" onclick="revealRound(3)">✨ See what's included</button>
+      <button class="btn-reset-round" id="reset-3" onclick="resetRound(3)">🔄 Reset this round</button>
+    </div>
+    <div class="result-details" id="details-3">
+      <div class="ingredient-list" id="ingredients-3"></div>
+      <div class="compare-why" id="why-3"></div>
+    </div>
+  </div>
+
+  <div class="discuss">
+    <h3>💬 Let's talk about it</h3>
+    <ul>
+      <li>🙋 Who made this image — you or the AI? Who should get the credit?</li>
+      <li>🏫 Could you use one of these pictures for a school project or a book cover?</li>
+      <li>🎨 What's something a human artist can do that AI can't?</li>
+    </ul>
+  </div>
+</main>
+<footer>Track A · Week 3 · Activity 1 &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+const ALL_INGREDIENTS = ['Color', 'Size', 'Action', 'Mood', 'Lighting', 'Art style'];
+
+const THEMES = {
+  fantasy: {
+    label: '🏰 A fantasy world',
+    rounds: [
+      { prompt: '"dragon"', has: [], why: 'Just one word. AI has almost nothing to work with, so it picks the most average, plain dragon it can think of — no background, no mood, no story.' },
+      { prompt: '"a giant purple dragon flying over a snowy mountain"', has: ['Color', 'Size', 'Action'], why: 'Color, size, and an action give AI real details to build a scene from — much more specific than round 1, but still missing mood, lighting, and style.' },
+      { prompt: '"a cheerful giant purple dragon flying through a glowing pink sunset sky, drawn in a soft, colorful painting style"', has: ['Color', 'Size', 'Action', 'Mood', 'Lighting', 'Art style'], why: 'Every ingredient is now included. AI has a full scene to build — not just a guess.' }
+    ]
+  },
+  bedroom: {
+    label: '🛏️ My dream bedroom',
+    rounds: [
+      { prompt: '"bedroom"', has: [], why: 'Totally plain — no personality, no color scheme, nothing that makes it feel like "your" dream room.' },
+      { prompt: '"a cozy bedroom with a treehouse bed and twinkly lights"', has: ['Mood', 'Lighting'], why: 'A cozy mood and twinkly lights start to appear — but there\'s still no color, size detail, action, or art style.' },
+      { prompt: '"a magical, dreamy bedroom with a big treehouse bed, glowing twinkly lights, and a window showing a starry night sky, drawn like a fun storybook picture"', has: ['Size', 'Mood', 'Lighting', 'Art style'], why: 'A specific size, a strong mood, glowing lighting, and a named art style turn a plain room into something that feels alive.' }
+    ]
+  },
+  pet: {
+    label: '🐾 An imaginary pet',
+    rounds: [
+      { prompt: '"pet"', has: [], why: '"Pet" could mean literally anything, so AI picks the most average, plain option it can imagine.' },
+      { prompt: '"a fluffy blue three-eyed creature with butterfly wings"', has: ['Color'], why: 'A color and some fun features appear — but there\'s still no mood, lighting, or art style to shape the feeling of the image.' },
+      { prompt: '"a playful, tiny, fluffy blue three-eyed creature with glowing butterfly wings, floating under a glowing night sky, drawn in a soft, dreamy painting style"', has: ['Color', 'Size', 'Mood', 'Lighting', 'Art style'], why: 'Fun features, a mood, lighting, and an art style give AI actual traits to draw instead of guessing.' }
+    ]
+  },
+  creature: {
+    label: '👾 An invented creature',
+    rounds: [
+      { prompt: '"creature"', has: [], why: 'One vague word — AI has nothing special to hold onto, so the result is as forgettable as the prompt.' },
+      { prompt: '"a tiny blue rock creature with glowing crystal spikes on its back"', has: ['Color', 'Size'], why: 'A color, a size, and a glowing detail appear — but mood, full lighting, and art style are still missing.' },
+      { prompt: '"a curious, friendly, tiny blue rock creature with glowing crystal spikes, standing in a dark, glowing cave, drawn like a character in a video game"', has: ['Color', 'Size', 'Mood', 'Lighting', 'Art style'], why: 'Color, size, mood, lighting, and an art style make it instantly special — it feels like it belongs in a real story.' }
+    ]
+  }
+};
+
+let currentTheme = 'fantasy';
+let currentRound = 1;
+let revealedState = { 1: false, 2: false, 3: false };
+
+function countWords(str) {
+  return str.replace(/["]/g, '').trim().split(/\s+/).filter(Boolean).length;
+}
+
+function renderIngredients(containerId, hasList) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = ALL_INGREDIENTS.map(ing => {
+    const yes = hasList.includes(ing);
+    return `<span class="ingredient-tag ${yes ? 'yes' : 'no'}">${yes ? '✓' : '✗'} ${ing}</span>`;
+  }).join('');
+}
+
+function loadTheme(key) {
+  const t = THEMES[key];
+  t.rounds.forEach((r, i) => {
+    const n = i + 1;
+    document.getElementById('prompt-' + n).textContent = r.prompt;
+    document.getElementById('count-' + n).textContent = countWords(r.prompt) + (n === 1 ? ' word' : ' words');
+    document.getElementById('why-' + n).textContent = r.why;
+    renderIngredients('ingredients-' + n, r.has);
+  });
+}
+
+function pickTheme(el) {
+  document.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentTheme = el.dataset.theme;
+  loadTheme(currentTheme);
+  resetAll();
+  goRound(1);
+}
+
+function goRound(n) {
+  currentRound = n;
+  document.querySelectorAll('.round-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('panel-' + n).style.display = 'block';
+  document.querySelectorAll('.round-tab').forEach(t => {
+    const r = parseInt(t.dataset.r);
+    t.classList.toggle('active', r === n);
+  });
+}
+
+function revealRound(n) {
+  document.getElementById('details-' + n).classList.add('show');
+  const btn = document.getElementById('btn-' + n);
+  btn.textContent = '✓ Revealed';
+  btn.classList.add('done');
+  document.getElementById('reset-' + n).classList.add('show');
+  document.querySelector(`.round-tab[data-r="${n}"]`).classList.add('seen');
+  revealedState[n] = true;
+  updateProgress();
+}
+
+function resetRound(n) {
+  document.getElementById('details-' + n).classList.remove('show');
+  const btn = document.getElementById('btn-' + n);
+  btn.textContent = '✨ See what\'s included';
+  btn.classList.remove('done');
+  document.getElementById('reset-' + n).classList.remove('show');
+  document.querySelector(`.round-tab[data-r="${n}"]`).classList.remove('seen');
+  revealedState[n] = false;
+  updateProgress();
+}
+
+function resetAll() {
+  [1, 2, 3].forEach(resetRound);
+}
+
+function updateProgress() {
+  const count = Object.values(revealedState).filter(Boolean).length;
+  document.getElementById('progress').style.width = (count / 3 * 100) + '%';
+}
+
+loadTheme(currentTheme);
+goRound(1);
+</script>
+</body>
+</html>

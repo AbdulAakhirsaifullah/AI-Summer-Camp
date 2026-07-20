@@ -1,0 +1,287 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity 1: Prompt Battle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --blue:#1A73E8; --blue-dark:#174EA6; --blue-tint:#E8F0FE; --blue-tint-2:#D2E3FC;
+    --ink:#202124; --ink-soft:#5F6368; --ink-mute:#80868B;
+    --paper:#FFFFFF; --bg:#F6F8FC; --border:#DADCE0; --border-soft:#E8EAED;
+    --success:#188038; --success-tint:#E6F4EA;
+    --radius-lg:20px; --radius:16px; --radius-sm:10px;
+    --font:'Inter', sans-serif;
+    --shadow-1: 0 1px 2px rgba(60,64,67,0.1), 0 1px 3px rgba(60,64,67,0.08);
+    --shadow-2: 0 4px 14px rgba(60,64,67,0.14), 0 1px 3px rgba(60,64,67,0.08);
+    --shadow-hover: 0 10px 28px rgba(26,115,232,0.18), 0 2px 6px rgba(60,64,67,0.08);
+  }
+  html{ scroll-behavior:smooth; }
+  body{ font-family:var(--font); background:var(--bg); color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+  /* ---------- App bar ---------- */
+  .app-bar{ position:sticky; top:0; z-index:50; background:var(--paper); border-bottom:1px solid var(--border-soft); }
+  .app-bar-inner{ max-width:780px; margin:0 auto; padding:18px 26px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .app-title{ font-size:19px; font-weight:700; color:var(--ink); letter-spacing:-0.01em; }
+  .app-title span.eyebrow{ display:block; font-size:11.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--blue); margin-bottom:2px; }
+  .duration-chip{ font-size:13px; font-weight:700; color:var(--blue-dark); background:var(--blue-tint); padding:8px 16px; border-radius:999px; white-space:nowrap; }
+
+  /* ---------- progress indicator ---------- */
+  .progress-wrap{ max-width:780px; margin:0 auto; padding:16px 26px 0; display:none; }
+  .progress-wrap.show{ display:block; }
+  .progress-steps{ display:flex; align-items:flex-start; }
+  .pstep{ flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; position:relative; }
+  .pstep::before{ content:""; position:absolute; top:17px; left:-50%; width:100%; height:2px; background:var(--border); z-index:0; }
+  .pstep:first-child::before{ display:none; }
+  .pstep.complete::before, .pstep.active::before{ background:var(--blue); }
+  .pdot{ width:34px; height:34px; border-radius:50%; background:var(--paper); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:var(--ink-mute); z-index:1; transition:all .25s ease; }
+  .pstep.active .pdot{ border-color:var(--blue); color:var(--blue); background:var(--blue-tint); box-shadow:0 0 0 5px rgba(26,115,232,0.12); }
+  .pstep.complete .pdot{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .plabel{ font-size:12.5px; font-weight:600; color:var(--ink-mute); }
+  .pstep.active .plabel{ color:var(--blue-dark); font-weight:700; }
+
+  /* ---------- layout ---------- */
+  main{ max-width:780px; margin:0 auto; padding:34px 22px 60px; }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; animation: rise .45s ease both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+
+  .card{ background:var(--paper); border-radius:var(--radius-lg); padding:36px 38px; box-shadow:var(--shadow-1); border:1px solid var(--border-soft); }
+
+  /* intro screen */
+  .intro-card{ text-align:left; }
+  .intro-card h1{ font-size:28px; font-weight:800; margin-bottom:14px; letter-spacing:-0.01em; }
+  .intro-card p{ font-size:16px; color:var(--ink-soft); line-height:1.75; margin-bottom:28px; max-width:620px; }
+
+  /* step cards */
+  .step-eyebrow{ font-size:12.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--blue); margin-bottom:8px; }
+  .card h2{ font-size:23px; font-weight:800; margin-bottom:18px; letter-spacing:-0.01em; }
+  .card p.lead{ font-size:15px; color:var(--ink-soft); line-height:1.7; margin-bottom:20px; }
+
+  .challenge-box{ position:relative; background:var(--blue-tint); border-left:4px solid var(--blue); border-radius:0 12px 12px 0; padding:20px 22px; margin-bottom:10px; }
+  .challenge-box textarea{ width:100%; background:transparent; border:none; resize:none; font-family:var(--font); font-size:17px; font-weight:600; color:var(--ink); line-height:1.55; outline:none; }
+  .edit-hint{ font-size:12px; color:var(--blue-dark); font-weight:600; margin-bottom:22px; display:flex; align-items:center; gap:6px; }
+
+  .instr-list{ list-style:none; display:flex; flex-direction:column; gap:10px; margin-bottom:30px; }
+  .instr-list li{ font-size:14.5px; color:var(--ink); display:flex; gap:12px; align-items:flex-start; line-height:1.6; }
+  .instr-list li::before{ content:"•"; color:var(--blue); font-weight:800; font-size:18px; line-height:1.3; }
+
+  label.field-label{ display:block; font-size:14px; font-weight:700; color:var(--ink); margin-bottom:4px; }
+  .field-sub{ font-size:12.5px; color:var(--ink-mute); margin-bottom:8px; }
+  textarea.field{ width:100%; font-family:var(--font); font-size:15px; line-height:1.6; padding:14px 16px; border-radius:var(--radius); border:1.5px solid var(--border); background:var(--bg); resize:vertical; min-height:120px; transition:border-color .2s ease, box-shadow .2s ease, background .2s ease; margin-bottom:22px; }
+  textarea.field:focus{ outline:none; border-color:var(--blue); background:#fff; box-shadow:0 0 0 4px rgba(26,115,232,0.12); }
+  textarea.field::placeholder{ color:var(--ink-mute); }
+
+  /* success card */
+  .success-card{ text-align:center; padding:48px 38px; }
+  .success-icon{ font-size:52px; margin-bottom:16px; }
+  .success-card h2{ font-size:25px; margin-bottom:14px; color:var(--success); }
+  .success-card p{ font-size:15.5px; color:var(--ink-soft); line-height:1.7; max-width:520px; margin:0 auto 30px; }
+
+  /* ---------- buttons (Material-style, with ripple) ---------- */
+  .btn-row{ display:flex; justify-content:flex-end; gap:12px; margin-top:6px; }
+  .btn-row.center{ justify-content:center; }
+  .btn{ position:relative; overflow:hidden; font-family:var(--font); font-weight:700; font-size:15px; padding:15px 32px; border-radius:999px; border:none; cursor:pointer; color:#fff; background:var(--blue); box-shadow:var(--shadow-2); transition:box-shadow .2s ease, transform .15s ease, background .2s ease; }
+  .btn:hover{ background:var(--blue-dark); box-shadow:var(--shadow-hover); transform:translateY(-1px); }
+  .btn:active{ transform:translateY(0) scale(0.98); }
+  .btn.large{ padding:17px 40px; font-size:16px; }
+  .btn.text{ background:transparent; color:var(--blue); box-shadow:none; padding:15px 18px; }
+  .btn.text:hover{ background:var(--blue-tint); box-shadow:none; transform:none; }
+  .ripple{ position:absolute; border-radius:50%; background:rgba(255,255,255,0.55); transform:scale(0); animation:ripple-anim .55s ease-out; pointer-events:none; }
+  @keyframes ripple-anim{ to{ transform:scale(2.6); opacity:0; } }
+
+  .back-link{ display:inline-block; margin-top:16px; font-size:13.5px; font-weight:600; color:var(--ink-mute); cursor:pointer; }
+  .back-link:hover{ color:var(--blue); }
+
+  footer{ text-align:center; padding:16px 20px 34px; font-size:12px; color:var(--ink-mute); }
+
+  @media (max-width:640px){
+    .card{ padding:26px 22px; }
+    .intro-card h1{ font-size:23px; }
+    .btn-row{ justify-content:center; }
+    .plabel{ display:none; }
+  }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header class="app-bar">
+  <div class="app-bar-inner">
+    <div class="app-title"><span class="eyebrow">AI Summer Camp</span>Activity 1: Prompt Battle</div>
+    <span class="duration-chip">⏱ 25 Minutes</span>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-steps">
+      <div class="pstep" data-step="1"><div class="pdot">1</div><span class="plabel">Challenge</span></div>
+      <div class="pstep" data-step="2"><div class="pdot">2</div><span class="plabel">Build Prompt</span></div>
+      <div class="pstep" data-step="3"><div class="pdot">3</div><span class="plabel">Share &amp; Vote</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Intro -->
+  <div class="panel active" id="panel-intro">
+    <div class="card intro-card">
+      <h1>Prompt Battle</h1>
+      <p>Work with your partner to create the best AI prompt possible. Every pair receives the same challenge. Your goal is to write one shared prompt that produces the strongest AI response. Afterward, the class will compare results and vote for the winning prompt.</p>
+      <div class="btn-row">
+        <button class="btn large" data-goto="1">Start Activity</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="panel" id="panel-1">
+    <div class="card">
+      <div class="step-eyebrow">Step 1</div>
+      <h2>Your Challenge</h2>
+
+      <div class="challenge-box">
+        <textarea rows="2" id="challengeText">Explain climate change to a skeptical uncle at Thanksgiving.</textarea>
+      </div>
+      <div class="edit-hint">✏️ Instructors: click the box above to edit today's challenge</div>
+
+      <ul class="instr-list">
+        <li>Work with your partner.</li>
+        <li>Discuss different ideas before writing.</li>
+        <li>Agree on one final prompt together.</li>
+        <li>Only one device or account is needed for each pair.</li>
+      </ul>
+
+      <div class="btn-row">
+        <button class="btn text back-link-btn" data-goto="intro">Back</button>
+        <button class="btn" data-goto="2">Next Step</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="step-eyebrow">Step 2</div>
+      <h2>Create Your Prompt</h2>
+      <p class="lead">Work together to write one clear and effective prompt. Think carefully about the audience, the goal, and how you want the AI to respond.</p>
+
+      <div class="challenge-box">
+        <h3 style="margin-bottom:18px; color:var(--blue-dark); font-size:20px;">
+          🤝 Your Mission
+        </h3>
+
+        <p style="font-size:15px; line-height:1.8; color:var(--ink-soft); margin-bottom:22px;">
+          Work together to create one clear and effective AI prompt. Discuss different ideas before agreeing on your final version.
+        </p>
+
+        <ul class="instr-list">
+          <li>Read the challenge carefully.</li>
+          <li>Discuss different prompt ideas with your partner.</li>
+          <li>Agree on one shared prompt.</li>
+          <li>Run your prompt using an AI chatbot.</li>
+          <li>Compare your AI response with the other pairs during the class discussion.</li>
+        </ul>
+
+        <div class="challenge-box" style="margin-top:24px;">
+          💡 <strong>Remember:</strong> Small changes in wording can produce very different AI responses. Think carefully before writing your final prompt.
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn text back-link-btn" data-goto="1">Back</button>
+        <button class="btn" data-goto="3">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="step-eyebrow">Step 3</div>
+      <h2>Share and Vote</h2>
+
+      <ul class="instr-list">
+        <li>Return to the main class.</li>
+        <li>Share your prompt and AI response.</li>
+        <li>Listen to the other teams.</li>
+        <li>Vote for the prompt that produced the best result.</li>
+        <li>Notice what made the winning prompt more effective.</li>
+      </ul>
+
+      <div class="btn-row">
+        <button class="btn text back-link-btn" data-goto="2">Back</button>
+        <button class="btn large" data-goto="success">Complete Activity</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="panel" id="panel-success">
+    <div class="card success-card">
+      <div class="success-icon">🏆</div>
+      <h2>Prompt Battle Complete!</h2>
+      <p>Great teamwork! Comparing prompts helps you understand how small changes in wording can produce very different AI responses.</p>
+      <div class="btn-row center">
+        <button class="btn large" data-goto="intro">Finish Activity</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>AI Summer Camp · Prompt Battle</footer>
+
+<script>
+  // ---------- panel navigation ----------
+  const panels = { intro: 'panel-intro', 1: 'panel-1', 2: 'panel-2', 3: 'panel-3', success: 'panel-success' };
+  const progressWrap = document.getElementById('progressWrap');
+  const pSteps = document.querySelectorAll('.pstep');
+
+  function goTo(target) {
+    Object.values(panels).forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(panels[target]).classList.add('active');
+
+    // progress indicator only shown during the 3 numbered steps
+    const isNumberedStep = target === 1 || target === 2 || target === 3 || target === '1' || target === '2' || target === '3';
+    progressWrap.classList.toggle('show', isNumberedStep);
+
+    if (isNumberedStep) {
+      const current = parseInt(target, 10);
+      pSteps.forEach(step => {
+        const n = parseInt(step.dataset.step, 10);
+        step.classList.toggle('active', n === current);
+        step.classList.toggle('complete', n < current);
+      });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.querySelectorAll('[data-goto]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const raw = btn.dataset.goto;
+      const target = (raw === 'intro' || raw === 'success') ? raw : parseInt(raw, 10);
+      goTo(target);
+    });
+  });
+
+  // ---------- Material ripple effect on all buttons ----------
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      const rect = btn.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      const size = Math.max(rect.width, rect.height) * 1.2;
+      ripple.className = 'ripple';
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+      btn.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+    });
+  });
+</script>
+
+</body>
+</html>

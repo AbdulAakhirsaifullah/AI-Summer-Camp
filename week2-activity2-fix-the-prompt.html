@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fix the Bad Prompt</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-light: #F1EFE8; --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 14px; --radius-lg: 18px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 24px; font-weight: 800; color: #fff; }
+  header .header-left p { font-size: 14px; color: #D8D5F5; margin-top: 4px; }
+  .pill { font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.16); color: #fff; }
+
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; background: var(--purple); transition: width 0.3s ease; width: 0%; }
+
+  main { max-width: 780px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  .intro { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 24px; text-align: center; }
+  .intro h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; color: var(--purple-dark); }
+  .intro p { font-size: 15px; color: var(--text-secondary); line-height: 1.55; }
+
+  .round { border-radius: var(--radius-lg); padding: 24px; margin-bottom: 22px; border: 2px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+  .round-1 { background: var(--purple-light); border-color: #C9C4F2; }
+  .round-2 { background: var(--teal-light); border-color: #9FDDC4; }
+  .round-3 { background: var(--coral-light); border-color: #EFC4AC; }
+
+  .round-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .round-num { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .round-1 .round-num { background: var(--purple); }
+  .round-2 .round-num { background: var(--teal); }
+  .round-3 .round-num { background: var(--coral); }
+  .round-title { font-size: 19px; font-weight: 800; }
+  .round-1 .round-title { color: var(--purple-dark); }
+  .round-2 .round-title { color: var(--teal); }
+  .round-3 .round-title { color: var(--coral); }
+
+  .label { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+
+  .bad-prompt { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; }
+  .bad-prompt .txt { font-size: 17px; font-style: italic; color: var(--text); }
+
+  .goal-box { background: rgba(255,255,255,0.6); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 18px; font-size: 14.5px; color: var(--text-secondary); line-height: 1.5; }
+  .goal-box b { color: var(--text); }
+
+  .reveal-btn-wrap { text-align: center; }
+  .btn-reveal { font-family: var(--font); font-size: 16px; font-weight: 800; padding: 13px 28px; border-radius: 30px; cursor: pointer; border: none; color: #fff; transition: transform 0.1s, box-shadow 0.15s; box-shadow: 0 3px 0 rgba(0,0,0,0.15); }
+  .btn-reveal:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+  .round-1 .btn-reveal { background: var(--purple); }
+  .round-2 .btn-reveal { background: var(--teal); }
+  .round-3 .btn-reveal { background: var(--coral); }
+  .btn-reveal.done { opacity: 0.55; cursor: default; }
+
+  .good-prompt { display: none; margin-top: 18px; background: var(--surface); border-radius: var(--radius); padding: 18px 20px; border: 2px solid; animation: pop 0.25s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+  .good-prompt.show { display: block; }
+  .round-1 .good-prompt { border-color: var(--purple); }
+  .round-2 .good-prompt { border-color: var(--teal); }
+  .round-3 .good-prompt { border-color: var(--coral); }
+  .good-prompt .star-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .round-1 .star-label { color: var(--purple-dark); }
+  .round-2 .star-label { color: var(--teal); }
+  .round-3 .star-label { color: var(--coral); }
+  .good-prompt .txt { font-size: 16px; color: var(--text); margin-bottom: 10px; line-height: 1.5; font-weight: 600; }
+  .good-prompt .why { font-size: 13.5px; color: var(--text-secondary); border-top: 1px solid var(--border); padding-top: 10px; line-height: 1.55; }
+
+  .result-banner { display: none; background: var(--purple); border-radius: var(--radius-lg); padding: 22px; margin-top: 10px; text-align: center; }
+  .result-banner.show { display: block; }
+  .result-banner h2 { font-size: 21px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .result-banner p { font-size: 14.5px; color: #E4E2FA; }
+
+  .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>🔧 Fix the Bad Prompt</h1>
+    <p>Track A · Week 2 · Activity 2 — Tap the button to see how a better prompt looks</p>
+  </div>
+  <div class="pill" id="pill-progress">0 / 3 revealed</div>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<main>
+  <div class="intro">
+    <h2>Same AI. Different instructions. Very different result!</h2>
+    <p>Read each broken prompt below. Think about what's missing — then tap the button to see a much better version of it.</p>
+  </div>
+
+  <div class="round round-1" id="round-1">
+    <div class="round-head">
+      <div class="round-num">1</div>
+      <div class="round-title">Write something nice</div>
+    </div>
+    <div class="label">😕 Broken prompt</div>
+    <div class="bad-prompt"><span class="txt">"Write something nice."</span></div>
+    <div class="goal-box">🎯 What we want: <b>a birthday card message for a 10-year-old who loves dinosaurs.</b></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-1" onclick="revealExample(1)">✨ Show me the better prompt</button>
+    </div>
+    <div class="good-prompt" id="example-1">
+      <div class="star-label">⭐ Great prompt</div>
+      <div class="txt">"Write a fun birthday card message for a 10-year-old who loves dinosaurs. Make it silly, include one dinosaur pun, and keep it to 3–4 sentences."</div>
+      <div class="why">Why it's better: it tells AI <b>who</b> the message is for, <b>what feeling</b> it should have, and <b>how long</b> it should be. AI can't guess "nice" — but it can totally do "silly, dinosaur pun, short."</div>
+    </div>
+  </div>
+
+  <div class="round round-2" id="round-2">
+    <div class="round-head">
+      <div class="round-num">2</div>
+      <div class="round-title">Explain stuff</div>
+    </div>
+    <div class="label">😕 Broken prompt</div>
+    <div class="bad-prompt"><span class="txt">"Explain stuff."</span></div>
+    <div class="goal-box">🎯 What we want: <b>a 3-sentence explanation of black holes, written for a kid.</b></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-2" onclick="revealExample(2)">✨ Show me the better prompt</button>
+    </div>
+    <div class="good-prompt" id="example-2">
+      <div class="star-label">⭐ Great prompt</div>
+      <div class="txt">"Explain what a black hole is in exactly 3 sentences, in a way an 8-year-old would understand. No hard science words."</div>
+      <div class="why">Why it's better: "stuff" could mean anything in the whole world! This prompt names the <b>topic</b>, the <b>length</b>, and <b>who</b> it's for.</div>
+    </div>
+  </div>
+
+  <div class="round round-3" id="round-3">
+    <div class="round-head">
+      <div class="round-num">3</div>
+      <div class="round-title">Make a story</div>
+    </div>
+    <div class="label">😕 Broken prompt</div>
+    <div class="bad-prompt"><span class="txt">"Make a story."</span></div>
+    <div class="goal-box">🎯 What we want: <b>a short story with characters, a setting, and a problem to solve.</b></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-3" onclick="revealExample(3)">✨ Show me the better prompt</button>
+    </div>
+    <div class="good-prompt" id="example-3">
+      <div class="star-label">⭐ Great prompt</div>
+      <div class="txt">"Write a short story (under 200 words) about a shy robot named Bolt who gets lost in a busy city and has to find its way home before its battery runs out."</div>
+      <div class="why">Why it's better: it gives AI a <b>character</b> (Bolt), a <b>place</b> (a busy city), and a <b>problem</b> (lost, battery running out) — the 3 things every story needs!</div>
+    </div>
+  </div>
+
+  <div class="result-banner" id="result-banner">
+    <h2>🎉 You fixed all 3 prompts!</h2>
+    <p>Notice the pattern: telling AI <b>who</b>, <b>what</b>, and <b>how much</b> makes a huge difference.</p>
+  </div>
+</main>
+<footer>Track A · Week 2 · Activity 2 &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+let done = { 1:false, 2:false, 3:false };
+
+function revealExample(n) {
+  document.getElementById('example-' + n).classList.add('show');
+  const btn = document.getElementById('btn-' + n);
+  btn.textContent = '✓ Revealed';
+  btn.classList.add('done');
+  btn.onclick = null;
+  done[n] = true;
+  updateUI();
+}
+
+function updateUI() {
+  const count = Object.values(done).filter(Boolean).length;
+  document.getElementById('pill-progress').textContent = count + ' / 3 revealed';
+  document.getElementById('progress').style.width = (count/3*100) + '%';
+  if (count === 3) {
+    document.getElementById('result-banner').classList.add('show');
+    launchConfetti();
+  }
+}
+
+function launchConfetti() {
+  if (document.querySelector('.confetti')) return;
+  const canvas = document.createElement('canvas');
+  canvas.className = 'confetti';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const pieces = Array.from({length: 110}, () => ({
+    x: Math.random() * canvas.width, y: -10,
+    r: Math.random() * 6 + 3,
+    c: ['#534AB7','#0F6E56','#993C1D','#F7C56A','#5DCAA5'][Math.floor(Math.random()*5)],
+    vy: Math.random() * 3 + 2, vx: (Math.random()-0.5)*2, rot: Math.random()*360, rv: Math.random()*4-2
+  }));
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p => {
+      p.y += p.vy; p.x += p.vx; p.rot += p.rv;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.r,-p.r,p.r*2,p.r*2); ctx.restore();
+    });
+    frame++;
+    if (frame < 120) requestAnimationFrame(draw); else canvas.remove();
+  }
+  draw();
+}
+</script>
+</body>
+</html>

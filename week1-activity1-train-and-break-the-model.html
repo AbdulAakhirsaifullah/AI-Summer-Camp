@@ -1,0 +1,369 @@
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity 1: Train and Break the Model</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #1A73E8;
+    --blue-dark: #174EA6;
+    --blue-darker: #103D82;
+    --blue-light: #E8F0FE;
+    --blue-pale: #F4F8FE;
+    --surface: #FFFFFF;
+    --bg: #F7F9FC;
+    --text: #202124;
+    --text-secondary: #5F6368;
+    --text-muted: #80868B;
+    --border: #E3E6EC;
+    --border-strong: #D2D7E3;
+    --success: #1E8E3E;
+    --success-light: #E6F4EA;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --shadow-sm: 0 1px 2px rgba(32,33,36,0.08), 0 1px 3px rgba(32,33,36,0.06);
+    --shadow-md: 0 4px 16px rgba(32,33,36,0.10);
+    --shadow-lg: 0 16px 40px rgba(26,115,232,0.18);
+    --display: 'Poppins', sans-serif;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .display { font-family: var(--display); }
+
+  a:focus-visible, button:focus-visible, textarea:focus-visible, input:focus-visible {
+    outline: 2.5px solid var(--blue); outline-offset: 2px;
+  }
+
+  /* ---------------- Header ---------------- */
+  .top-header {
+    background: linear-gradient(120deg, var(--blue) 0%, var(--blue-dark) 65%, var(--blue-darker) 100%);
+    padding: 34px 24px 30px;
+  }
+  .top-header-inner { max-width: 780px; margin: 0 auto; }
+  .eyebrow {
+    font-size: 12.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    color: rgba(255,255,255,0.78); margin-bottom: 8px;
+  }
+  .top-header h1 { font-size: 26px; font-weight: 700; color: #fff; line-height: 1.25; margin-bottom: 12px; max-width: 560px; }
+  .duration-pill {
+    display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.16);
+    color: #fff; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 20px;
+  }
+
+  /* ---------------- Stepper ---------------- */
+  .stepper-wrap { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 20; }
+  .stepper { max-width: 780px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; }
+  .step-node { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+  .step-circle {
+    width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); font-size: 13.5px; font-weight: 600; flex-shrink: 0;
+    background: var(--bg); color: var(--text-muted); border: 2px solid var(--border-strong);
+    transition: all 0.3s ease;
+  }
+  .step-node.active .step-circle { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 0 0 4px var(--blue-light); }
+  .step-node.done .step-circle { background: var(--success); border-color: var(--success); color: #fff; }
+  .step-label { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .step-node.active .step-label { color: var(--blue-dark); }
+  .step-node.done .step-label { color: var(--success); }
+  .step-connector { flex: 1 1 auto; height: 2px; background: var(--border-strong); margin: 0 10px; position: relative; min-width: 18px; }
+  .step-connector .fill { position: absolute; inset: 0; background: var(--success); width: 0%; transition: width 0.4s ease; }
+
+  /* ---------------- Layout ---------------- */
+  main { max-width: 780px; margin: 0 auto; padding: 36px 24px 90px; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: screenIn 0.4s cubic-bezier(.16,1,.3,1); }
+  @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card {
+    background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);
+    padding: 32px; box-shadow: var(--shadow-sm); margin-bottom: 22px; transition: box-shadow 0.25s ease;
+  }
+  .card:hover { box-shadow: var(--shadow-md); }
+  .card h2 { font-size: 21px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+  .card p.lede { font-size: 15.5px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 8px; }
+
+  /* Intro screen */
+  .intro-card { text-align: left; }
+  .intro-card p { font-size: 16px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 26px; }
+
+  /* Instruction checklist */
+  .checklist { list-style: none; margin-top: 6px; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border);
+    font-size: 15px; color: var(--text); line-height: 1.55;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-dot {
+    width: 24px; height: 24px; border-radius: 7px; background: var(--blue-light); color: var(--blue);
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+  }
+
+  .tool-link {
+    display: inline-flex; align-items: center; gap: 8px; background: var(--blue); color: #fff;
+    font-weight: 600; font-size: 14.5px; padding: 12px 22px; border-radius: 30px; text-decoration: none;
+    margin-top: 20px; box-shadow: var(--shadow-sm); transition: box-shadow 0.2s ease, transform 0.15s ease;
+  }
+  .tool-link:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+  /* Callout */
+  .callout {
+    background: var(--blue-pale); border-left: 4px solid var(--blue); border-radius: var(--radius-sm);
+    padding: 18px 22px; margin: 18px 0 22px; font-size: 15px; color: var(--blue-darker); font-weight: 500; line-height: 1.6;
+  }
+
+  /* Experiment cards */
+  .experiment-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 26px; margin-bottom: 20px; box-shadow: var(--shadow-sm); transition: box-shadow 0.25s ease, transform 0.2s ease;
+  }
+  .experiment-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .experiment-card:last-child { margin-bottom: 0; }
+  .experiment-title {
+    display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 15px; font-weight: 600;
+    color: var(--blue-dark); background: var(--blue-light); padding: 7px 16px; border-radius: 20px; margin-bottom: 18px;
+  }
+  .field-block { margin-bottom: 18px; }
+  .field-block:last-child { margin-bottom: 0; }
+  .field-block label { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  textarea {
+    width: 100%; font-family: var(--font); font-size: 14.5px; color: var(--text); line-height: 1.6;
+    border: 1.5px solid var(--border-strong); border-radius: var(--radius-sm); padding: 13px 16px;
+    background: var(--bg); resize: vertical; min-height: 84px; transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  textarea:focus { outline: none; border-color: var(--blue); background: var(--surface); box-shadow: 0 0 0 4px var(--blue-light); }
+  textarea.large { min-height: 130px; }
+
+  /* Buttons */
+  .btn-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .btn-row.center { justify-content: center; }
+  .btn {
+    font-family: var(--font); font-size: 15.5px; font-weight: 600; padding: 15px 32px; border-radius: 30px;
+    cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 9px;
+    transition: box-shadow 0.2s ease, transform 0.15s ease, background 0.2s ease;
+  }
+  .btn:active { transform: translateY(1px) scale(0.98); }
+  .btn-primary { background: var(--blue); color: #fff; box-shadow: var(--shadow-sm); }
+  .btn-primary:hover { background: var(--blue-dark); box-shadow: var(--shadow-lg); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); border: 1.5px solid var(--border-strong); }
+  .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* Finish screen */
+  .finish-card {
+    text-align: center; padding: 52px 40px; background: linear-gradient(160deg, #FFFFFF, var(--blue-pale));
+  }
+  .finish-icon {
+    width: 76px; height: 76px; border-radius: 50%; background: var(--success-light); color: var(--success);
+    display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto 20px;
+  }
+  .finish-card h2 { font-size: 24px; margin-bottom: 12px; }
+  .finish-card p { font-size: 16px; color: var(--text-secondary); line-height: 1.7; max-width: 480px; margin: 0 auto 30px; }
+  .finish-done-note {
+    display: none; align-items: center; justify-content: center; gap: 8px; margin-top: 18px;
+    font-size: 14px; font-weight: 600; color: var(--success);
+  }
+  .finish-done-note.show { display: flex; }
+
+  footer { text-align: center; padding: 24px 20px; font-size: 12.5px; color: var(--text-muted); }
+
+  @media (max-width: 620px) {
+    .card, .experiment-card { padding: 22px; }
+    .top-header h1 { font-size: 22px; }
+    .stepper { padding: 14px 16px; }
+    .step-label { display: none; }
+    .btn-row { justify-content: stretch; }
+    .btn-row .btn { flex: 1; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .screen.active, .experiment-card, .tool-link, .btn { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<div class="top-header">
+  <div class="top-header-inner">
+    <div class="eyebrow">AI Summer Camp · Track B</div>
+    <h1>Activity 1: Train and Break the Model</h1>
+    <span class="duration-pill">⏱ 25 Minutes</span>
+  </div>
+</div>
+
+<div class="stepper-wrap">
+  <div class="stepper" id="stepper">
+    <div class="step-node" data-step="1">
+      <div class="step-circle">1</div>
+      <span class="step-label">Train</span>
+    </div>
+    <div class="step-connector"><div class="fill" id="fill-1"></div></div>
+    <div class="step-node" data-step="2">
+      <div class="step-circle">2</div>
+      <span class="step-label">Challenge</span>
+    </div>
+    <div class="step-connector"><div class="fill" id="fill-2"></div></div>
+    <div class="step-node" data-step="3">
+      <div class="step-circle">3</div>
+      <span class="step-label">Reflect</span>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- SCREEN 0: INTRO -->
+  <section class="screen active" id="screen-0">
+    <div class="card intro-card">
+      <h2>Before you begin</h2>
+      <p>In this activity, you will train your own AI gesture classifier using Google Teachable Machine. Then, you'll become an AI investigator by designing your own experiments to see when your model succeeds and when it fails.</p>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goToScreen(1)">Start Activity →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 1: STEP 1 -->
+  <section class="screen" id="screen-1">
+    <div class="card">
+      <h2>Step 1 — Train Your AI</h2>
+      <ul class="checklist">
+        <li><span class="check-dot">1</span> Open Google Teachable Machine</li>
+        <li><span class="check-dot">2</span> Create 3 gesture classes</li>
+        <li><span class="check-dot">3</span> Capture approximately 40 webcam images for each gesture</li>
+        <li><span class="check-dot">4</span> Train your model</li>
+        <li><span class="check-dot">5</span> Test that all three gestures are recognized correctly before moving on</li>
+      </ul>
+      <a class="tool-link" href="https://teachablemachine.withgoogle.com" target="_blank" rel="noopener">Open Teachable Machine ↗</a>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToScreen(0)">← Back</button>
+      <button class="btn btn-primary" onclick="goToScreen(2)">Next Step →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: STEP 2 -->
+  <section class="screen" id="screen-2">
+    <div class="card">
+      <h2>Step 2 — Challenge Your AI</h2>
+      <div class="callout">💡 Think about what's different between your training photos and a brand new situation.</div>
+      <p class="lede">Design three different experiments to try to confuse your own AI model. Be creative and investigate what affects your model's performance.</p>
+    </div>
+
+    
+<div class="experiment-card">
+  <div class="experiment-title">🧪 Your Mission</div>
+  <p class="lede">Design <strong>three different experiments</strong> to try to confuse your own AI model.</p>
+  <ul class="checklist">
+    <li><span class="check-dot">1</span>Design a new test.</li>
+    <li><span class="check-dot">2</span>Run the test using your trained model.</li>
+    <li><span class="check-dot">3</span>Observe how your AI responds.</li>
+    <li><span class="check-dot">4</span>Think about why your model behaved that way.</li>
+  </ul>
+  <div class="callout" style="margin-top:20px;">💡 Be creative! Design your own experiments instead of copying someone else's ideas.</div>
+</div>
+
+<div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToScreen(1)">← Back</button>
+      <button class="btn btn-primary" onclick="goToScreen(3)">Next Step →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: STEP 3 -->
+  <section class="screen" id="screen-3">
+    <div class="card">
+      <h2>Step 3 — What Did You Learn?</h2>
+      <p class="lede">Think about everything you discovered during your experiments.</p>
+<div class="callout">💡 Based on your testing, what did you learn about training data?</div>
+<ul class="checklist">
+<li><span class="check-dot">✓</span>Think about how your model performed during different experiments.</li>
+<li><span class="check-dot">✓</span>Identify what affected your model's predictions.</li>
+<li><span class="check-dot">✓</span>Be ready to share your observations during the class discussion.</li>
+</ul>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToScreen(2)">← Back</button>
+      <button class="btn btn-primary" onclick="goToScreen(4)">Complete Activity →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 4: FINISH -->
+  <section class="screen" id="screen-4">
+    <div class="card finish-card">
+      <div class="finish-icon">✓</div>
+      <h2>🎉 Investigation Complete!</h2>
+      <p>Great work! You didn't just train an AI—you investigated its strengths and weaknesses like a real AI researcher.</p>
+      <div class="btn-row center">
+        <button class="btn btn-primary" id="finishBtn">Finish Activity</button>
+      </div>
+      <div class="finish-done-note" id="finishNote">✓ Activity marked complete</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goToScreen(3)">← Back to Step 3</button>
+    </div>
+  </section>
+
+</main>
+<footer>Track B · Activity 1 &nbsp;|&nbsp; AI Summer Camp</footer>
+
+<script>
+  let current = 0;
+  const totalScreens = 5; // 0 intro, 1-3 steps, 4 finish
+
+  function goToScreen(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + n).classList.add('active');
+    current = n;
+    updateStepper();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateStepper() {
+    // step nodes correspond to screens 1, 2, 3
+    for (let i = 1; i <= 3; i++) {
+      const node = document.querySelector('.step-node[data-step="' + i + '"]');
+      node.classList.remove('active', 'done');
+      if (current === 4 || current > i) {
+        node.classList.add('done');
+        node.querySelector('.step-circle').textContent = '✓';
+      } else if (current === i) {
+        node.classList.add('active');
+        node.querySelector('.step-circle').textContent = i;
+      } else {
+        node.querySelector('.step-circle').textContent = i;
+      }
+    }
+    document.getElementById('fill-1').style.width = (current > 1 || current === 4) ? '100%' : '0%';
+    document.getElementById('fill-2').style.width = (current > 2 || current === 4) ? '100%' : '0%';
+  }
+
+  // allow clicking stepper nodes to jump to a visited step
+  document.querySelectorAll('.step-node').forEach(node => {
+    node.style.cursor = 'pointer';
+    node.addEventListener('click', () => {
+      const step = parseInt(node.dataset.step, 10);
+      if (step <= current || current === 4) goToScreen(step);
+    });
+  });
+
+  document.getElementById('finishBtn').addEventListener('click', () => {
+    const note = document.getElementById('finishNote');
+    note.classList.add('show');
+    document.getElementById('finishBtn').disabled = true;
+    document.getElementById('finishBtn').style.opacity = '0.6';
+    document.getElementById('finishBtn').style.cursor = 'default';
+  });
+
+  updateStepper();
+</script>
+</body>
+</html>

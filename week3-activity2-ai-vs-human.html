@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI vs Human Challenge — Activity Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --blue:#2E5EFF; --blue-dark:#173CB0; --blue-light:#EAF0FF;
+    --purple:#8B5CF6; --purple-dark:#5B21B6; --purple-light:#F2EBFF;
+    --cyan:#0EA5A0; --cyan-dark:#0A7A76; --cyan-light:#E1F5F2;
+    --coral:#E8622C; --coral-dark:#B8481A; --coral-light:#FDEBE1;
+    --gold:#D4A017; --gold-dark:#96700D; --gold-light:#FBF0DA;
+    --success:#1E8F5F; --success-light:#E3F5EC;
+    --ink:#131B3D; --ink-soft:#5B6584; --ink-mute:#8B93AD;
+    --paper:#FFFFFF; --bg:#F5F7FD; --border:#E4E9F7; --border-strong:#CBD5F0;
+    --radius-lg:20px; --radius:14px; --radius-sm:9px;
+    --disp:'Poppins', sans-serif; --body:'Inter', sans-serif;
+    --shadow-card: 0 2px 10px rgba(19,27,61,0.05), 0 1px 2px rgba(19,27,61,0.04);
+    --shadow-hover: 0 16px 34px rgba(46,94,255,0.13);
+  }
+  html{ scroll-behavior:smooth; }
+  body{ font-family:var(--body); background:var(--bg); color:var(--ink); min-height:100vh; }
+  h1,h2,h3{ font-family:var(--disp); }
+
+  /* ---------- Sticky header ---------- */
+  .site-header{ position:sticky; top:0; z-index:50; background:rgba(255,255,255,0.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); transition:box-shadow .25s ease; }
+  .site-header.scrolled{ box-shadow:0 6px 20px rgba(19,27,61,0.08); }
+  .header-inner{ max-width:960px; margin:0 auto; padding:16px 24px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:center; gap:14px; }
+  .brand .emoji{ font-size:32px; line-height:1; }
+  .brand h1{ font-size:20px; font-weight:800; letter-spacing:-0.01em; }
+  .brand .subtitle{ font-size:13px; color:var(--ink-soft); font-weight:500; margin-top:2px; }
+  .badge-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .badge{ font-family:var(--disp); font-weight:700; font-size:12.5px; color:#fff; padding:8px 15px; border-radius:999px; white-space:nowrap; }
+  .badge.time{ background:linear-gradient(120deg,var(--blue),var(--purple)); box-shadow:0 6px 16px rgba(90,70,220,0.28); }
+  .badge.fun{ background:linear-gradient(120deg,var(--gold-dark),var(--gold)); box-shadow:0 6px 16px rgba(200,150,10,0.28); }
+
+  /* ---------- Progress tracker ---------- */
+  .tracker-wrap{ max-width:960px; margin:0 auto; padding:14px 24px 0; }
+  .tracker{ display:flex; align-items:center; gap:0; }
+  .tstep{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; position:relative; }
+  .tstep::before{ content:""; position:absolute; top:15px; left:-50%; width:100%; height:3px; background:var(--border); z-index:0; }
+  .tstep:first-child::before{ display:none; }
+  .tstep.complete::before, .tstep.current::before{ background:linear-gradient(90deg,var(--blue),var(--purple)); }
+  .tdot{ width:32px; height:32px; border-radius:50%; background:#fff; border:2.5px solid var(--border-strong); display:flex; align-items:center; justify-content:center; font-family:var(--disp); font-weight:700; font-size:13px; color:var(--ink-mute); z-index:1; transition:all .3s ease; }
+  .tstep.current .tdot{ border-color:var(--blue); color:var(--blue); background:var(--blue-light); transform:scale(1.15); box-shadow:0 0 0 6px rgba(46,94,255,0.12); }
+  .tstep.complete .tdot{ background:linear-gradient(135deg,var(--blue),var(--purple)); border-color:transparent; color:#fff; }
+  .tlabel{ font-size:11px; font-weight:600; color:var(--ink-mute); text-align:center; }
+  .tstep.current .tlabel{ color:var(--blue); font-weight:700; }
+  @media (max-width:640px){ .tlabel{ display:none; } }
+
+  /* ---------- Layout ---------- */
+  main{ max-width:960px; margin:0 auto; padding:28px 20px 20px; }
+  .card{ background:var(--paper); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px 30px; margin-bottom:22px; box-shadow:var(--shadow-card);
+    opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease, box-shadow .25s ease; }
+  .card.in-view{ opacity:1; transform:translateY(0); }
+  .card:hover{ box-shadow:var(--shadow-hover); }
+  .card > p.intro{ font-size:15px; color:var(--ink-soft); line-height:1.7; }
+
+  .mission-card{ background:linear-gradient(120deg, var(--blue-light), var(--purple-light)); border:none; position:relative; overflow:hidden; }
+  .mission-card::after{ content:""; position:absolute; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle, rgba(139,92,246,0.18), transparent 70%); top:-90px; right:-60px; }
+  .mission-card h2{ color:var(--purple-dark); font-size:22px; margin-bottom:12px; }
+  .mission-card ul{ position:relative; z-index:1; list-style:none; display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .mission-card ul li{ font-size:14.5px; color:var(--ink); display:flex; gap:10px; align-items:flex-start; }
+  .mission-card ul li::before{ content:"→"; color:var(--purple); font-weight:700; }
+  .mission-note{ margin-top:14px; font-size:13px; font-weight:600; color:var(--purple-dark); background:rgba(255,255,255,0.6); display:inline-block; padding:6px 14px; border-radius:999px; }
+
+  /* ---------- Round cards ---------- */
+  .round-pill{ display:inline-block; font-family:var(--disp); font-size:11px; font-weight:700; letter-spacing:.08em; padding:5px 13px; border-radius:20px; margin-bottom:10px; text-transform:uppercase; }
+  .r1 .round-pill{ background:var(--blue-light); color:var(--blue-dark); }
+  .r2 .round-pill{ background:var(--cyan-light); color:var(--cyan-dark); }
+  .r3 .round-pill{ background:var(--coral-light); color:var(--coral-dark); }
+  .r4 .round-pill{ background:var(--gold-light); color:var(--gold-dark); }
+  .round-heading{ font-size:22px; font-weight:700; margin-bottom:10px; }
+  .r1 .round-heading{ color:var(--blue-dark); }
+  .r2 .round-heading{ color:var(--cyan-dark); }
+  .r3 .round-heading{ color:var(--coral-dark); }
+  .r4 .round-heading{ color:var(--gold-dark); }
+  .instructions{ font-size:14.5px; color:var(--ink-soft); line-height:1.7; margin-bottom:14px; }
+  .instructions .no-ai{ display:inline-block; font-weight:700; color:var(--coral-dark); background:var(--coral-light); padding:2px 9px; border-radius:6px; font-size:12.5px; margin-left:2px; }
+  .example-line{ font-weight:700; color:var(--ink); background:var(--bg); display:inline-block; padding:8px 14px; border-radius:8px; margin:6px 0 4px; font-size:14px; }
+
+  label.field-label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin:14px 0 6px; }
+  label.field-label:first-of-type{ margin-top:6px; }
+  textarea, input[type=text]{ width:100%; font-family:var(--body); font-size:14px; line-height:1.6; padding:12px 15px; border-radius:var(--radius); border:1.5px solid var(--border-strong); background:var(--bg); resize:vertical; transition:border-color .2s ease, box-shadow .2s ease, background .2s ease; }
+  textarea{ min-height:88px; }
+  textarea.small{ min-height:56px; }
+  textarea:focus, input[type=text]:focus{ outline:none; border-color:var(--blue); background:#fff; box-shadow:0 0 0 4px rgba(46,94,255,0.12); }
+  textarea::placeholder, input::placeholder{ color:var(--ink-mute); }
+
+  /* toggle button groups (single-select and multi-select) */
+  .toggle-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  .toggle-btn{ font-family:var(--body); font-size:13px; font-weight:600; padding:9px 16px; border-radius:999px; border:1.5px solid var(--border-strong); background:var(--paper); color:var(--ink-soft); cursor:pointer; transition:all .18s ease; }
+  .toggle-btn:hover{ border-color:var(--blue); color:var(--blue); }
+  .toggle-btn.active{ background:linear-gradient(120deg,var(--blue),var(--purple)); border-color:transparent; color:#fff; box-shadow:0 4px 12px rgba(90,70,220,0.28); }
+
+  /* round 4 mini vote cards */
+  .vote-card{ background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px; }
+  .vote-card .vc-title{ font-family:var(--disp); font-weight:700; font-size:14px; color:var(--ink); margin-bottom:8px; }
+
+  .key-idea{ background:linear-gradient(120deg, var(--purple-dark), #3A1E82); border:none; text-align:center; padding:36px 30px; }
+  .key-idea h2{ color:#fff; font-size:24px; margin-bottom:12px; }
+  .key-idea p{ color:#E5DDFF; font-size:16px; line-height:1.7; max-width:640px; margin:0 auto; }
+
+  /* ---------- Action bar ---------- */
+  .action-bar{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; padding:8px 0 40px; }
+  .btn{ font-family:var(--disp); font-weight:700; font-size:14.5px; padding:14px 26px; border-radius:999px; border:none; cursor:pointer; transition:transform .18s ease, box-shadow .18s ease, background .2s ease; }
+  .btn:active{ transform:scale(0.96); }
+  .btn.primary{ background:linear-gradient(120deg,var(--blue),var(--purple)); color:#fff; box-shadow:0 10px 24px rgba(90,70,220,0.32); }
+  .btn.primary:hover{ box-shadow:0 14px 30px rgba(90,70,220,0.42); transform:translateY(-2px); }
+  .btn.primary.completed{ background:linear-gradient(120deg,var(--success),#25B57A); }
+  .btn.secondary{ background:#fff; color:var(--ink-soft); border:1.5px solid var(--border-strong); }
+  .btn.secondary:hover{ border-color:var(--blue); color:var(--blue); transform:translateY(-2px); }
+
+  .autosave-note{ text-align:center; font-size:12px; color:var(--ink-mute); margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .autosave-note .dot{ width:7px; height:7px; border-radius:50%; background:var(--success); display:inline-block; }
+
+  footer{ text-align:center; padding:10px 20px 34px; font-size:12px; color:var(--ink-mute); }
+
+  #confettiLayer{ position:fixed; inset:0; pointer-events:none; z-index:999; overflow:hidden; }
+  .confetti-piece{ position:absolute; top:-10px; border-radius:2px; animation:fall linear forwards; }
+  @keyframes fall{ to{ transform:translateY(105vh) rotate(540deg); opacity:0.9; } }
+
+  @media (max-width:700px){
+    .card{ padding:22px 18px; }
+    .brand h1{ font-size:17px; }
+  }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header class="site-header" id="siteHeader">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="emoji">🤖</span>
+      <div>
+        <h1>AI vs Human Challenge</h1>
+        <div class="subtitle">Track B • Week 3 • Activity 2</div>
+      </div>
+    </div>
+    <div class="badge-row">
+      <span class="badge time">⏱ 25 Minutes</span>
+      <span class="badge fun">🏆 Can You Beat the AI?</span>
+    </div>
+  </div>
+
+  <!-- progress tracker, current step highlighted automatically via scroll position -->
+  <div class="tracker-wrap">
+    <div class="tracker" id="tracker">
+      <div class="tstep" data-target="round1"><div class="tdot">1</div><span class="tlabel">Round 1</span></div>
+      <div class="tstep" data-target="round2"><div class="tdot">2</div><span class="tlabel">Round 2</span></div>
+      <div class="tstep" data-target="round3"><div class="tdot">3</div><span class="tlabel">Round 3</span></div>
+      <div class="tstep" data-target="round4"><div class="tdot">4</div><span class="tlabel">Round 4</span></div>
+      <div class="tstep" data-target="reflect"><div class="tdot">✓</div><span class="tlabel">Reflection</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Mission -->
+  <section class="card mission-card">
+    <h2>🎯 Your Mission</h2>
+    <p class="intro">In this activity, you'll compete against AI in four quick challenges. For each round:</p>
+    <ul>
+      <li>Complete the task yourself first.</li>
+      <li>Watch the teacher test the same challenge using AI.</li>
+      <li>Compare your answer with the AI's.</li>
+      <li>Think about who performed better, and why.</li>
+    </ul>
+    <span class="mission-note">👤 No teams — everyone participates individually.</span>
+  </section>
+
+  <!-- Round 1 -->
+  <section class="card r1" id="round1">
+    <span class="round-pill">Round 1 · Word Prediction</span>
+    <h2 class="round-heading">🔤 Word Prediction</h2>
+    <p class="instructions">The teacher will display an incomplete sentence, for example:</p>
+    <div class="example-line">"Yesterday I forgot my ______."</div>
+    <p class="instructions">Write the word you think comes next. <span class="no-ai">Do NOT use AI</span> — think on your own first.</p>
+
+    <label class="field-label">Your word</label>
+    <input type="text" data-key="r1_answer" placeholder="Type the one word you think comes next...">
+
+    <label class="field-label">Why did you choose that word?</label>
+    <textarea class="small" data-key="r1_reason" placeholder="What made that word feel like the natural fit?"></textarea>
+
+    <label class="field-label">After the teacher shows the AI's answer — how was your answer different?</label>
+    <textarea data-key="r1_diff" placeholder="Same word? Totally different? What does that tell you?"></textarea>
+  </section>
+
+  <!-- Round 2 -->
+  <section class="card r2" id="round2">
+    <span class="round-pill">Round 2 · Image Captioning</span>
+    <h2 class="round-heading">🖼️ Image Captioning</h2>
+    <p class="instructions">The teacher will display a funny or unusual picture. Write your own caption before seeing the AI version.</p>
+
+    <label class="field-label">Your caption</label>
+    <textarea class="small" data-key="r2_caption" placeholder="Write your caption for the image..."></textarea>
+
+    <label class="field-label">Was your caption... <span style="font-weight:400; color:var(--ink-mute);">(pick all that apply)</span></label>
+    <div class="toggle-row" data-group="r2_check">
+      <button type="button" class="toggle-btn" data-value="Funnier">Funnier</button>
+      <button type="button" class="toggle-btn" data-value="More accurate">More accurate</button>
+      <button type="button" class="toggle-btn" data-value="More creative">More creative</button>
+      <button type="button" class="toggle-btn" data-value="Different from AI">Different from AI</button>
+    </div>
+
+    <label class="field-label">After the teacher shows the AI result — what did you notice?</label>
+    <textarea data-key="r2_notice" placeholder="What was similar, different, or surprising about the AI's caption?"></textarea>
+  </section>
+
+  <!-- Round 3 -->
+  <section class="card r3" id="round3">
+    <span class="round-pill">Round 3 · Quick Draw Reverse</span>
+    <h2 class="round-heading">🎨 Quick Draw Reverse</h2>
+    <p class="instructions">The teacher will tell you an abstract idea to draw — for example: <em>justice, love, freedom, disappointment</em>. Use Quick Draw on your own computer and see if the AI recognizes your drawing.</p>
+
+    <label class="field-label">What concept did you draw?</label>
+    <input type="text" data-key="r3_concept" placeholder="e.g. Freedom">
+
+    <label class="field-label">Did Quick Draw guess correctly?</label>
+    <div class="toggle-row" data-group="r3_guessed" data-single="true">
+      <button type="button" class="toggle-btn" data-value="Yes">Yes</button>
+      <button type="button" class="toggle-btn" data-value="No">No</button>
+    </div>
+
+    <label class="field-label">What surprised you?</label>
+    <textarea data-key="r3_surprise" placeholder="Why do you think it struggled or succeeded with an abstract idea like this?"></textarea>
+  </section>
+
+  <!-- Round 4 -->
+  <section class="card r4" id="round4">
+    <span class="round-pill">Round 4 · Fake or Real?</span>
+    <h2 class="round-heading">🧠 Fake or Real?</h2>
+    <p class="instructions">The teacher will display several short texts. For each one, decide: did a human write it, or an AI?</p>
+
+    <div class="vote-card">
+      <div class="vc-title">Text 1</div>
+      <div class="toggle-row" data-group="r4_1_vote" data-single="true">
+        <button type="button" class="toggle-btn" data-value="Human">Human</button>
+        <button type="button" class="toggle-btn" data-value="AI">AI</button>
+      </div>
+      <textarea class="small" data-key="r4_1_reason" placeholder="Reason for your vote..." style="margin-top:10px;"></textarea>
+    </div>
+    <div class="vote-card">
+      <div class="vc-title">Text 2</div>
+      <div class="toggle-row" data-group="r4_2_vote" data-single="true">
+        <button type="button" class="toggle-btn" data-value="Human">Human</button>
+        <button type="button" class="toggle-btn" data-value="AI">AI</button>
+      </div>
+      <textarea class="small" data-key="r4_2_reason" placeholder="Reason for your vote..." style="margin-top:10px;"></textarea>
+    </div>
+    <div class="vote-card">
+      <div class="vc-title">Text 3</div>
+      <div class="toggle-row" data-group="r4_3_vote" data-single="true">
+        <button type="button" class="toggle-btn" data-value="Human">Human</button>
+        <button type="button" class="toggle-btn" data-value="AI">AI</button>
+      </div>
+      <textarea class="small" data-key="r4_3_reason" placeholder="Reason for your vote..." style="margin-top:10px;"></textarea>
+    </div>
+    <div class="vote-card">
+      <div class="vc-title">Text 4</div>
+      <div class="toggle-row" data-group="r4_4_vote" data-single="true">
+        <button type="button" class="toggle-btn" data-value="Human">Human</button>
+        <button type="button" class="toggle-btn" data-value="AI">AI</button>
+      </div>
+      <textarea class="small" data-key="r4_4_reason" placeholder="Reason for your vote..." style="margin-top:10px;"></textarea>
+    </div>
+    <div class="vote-card">
+      <div class="vc-title">Text 5</div>
+      <div class="toggle-row" data-group="r4_5_vote" data-single="true">
+        <button type="button" class="toggle-btn" data-value="Human">Human</button>
+        <button type="button" class="toggle-btn" data-value="AI">AI</button>
+      </div>
+      <textarea class="small" data-key="r4_5_reason" placeholder="Reason for your vote..." style="margin-top:10px;"></textarea>
+    </div>
+  </section>
+
+  <!-- Final Reflection -->
+  <section class="card" id="reflect">
+    <span class="round-pill" style="background:var(--purple-light); color:var(--purple-dark);">Final Reflection</span>
+    <h2 class="round-heading" style="color:var(--purple-dark);">💬 Final Reflection</h2>
+    <p class="instructions" style="margin-bottom:14px;">Talk through these as a class — no need to write anything down.</p>
+
+    <label class="field-label">Where did humans perform better?</label>
+    <label class="field-label">Where did AI perform better?</label>
+    <label class="field-label">What surprised you the most?</label>
+    <label class="field-label">When should you trust AI?</label>
+    <label class="field-label">When should you rely on your own thinking?</label>
+  </section>
+
+  <!-- Key Learning -->
+  <section class="card key-idea">
+    <h2>🎯 What We Learned</h2>
+    <p>AI is incredibly fast and powerful at many tasks, but humans still have strengths in creativity, judgment, emotion, and understanding context. The best results come when humans and AI work together.</p>
+  </section>
+
+  <div class="autosave-note"><span class="dot"></span> Your answers are auto-saved in this browser as you type.</div>
+
+  <div class="action-bar">
+    <button class="btn secondary" id="resetBtn">↺ Reset Activity</button>
+    <button class="btn primary" id="missionBtn">🎉 Mission Complete</button>
+  </div>
+
+</main>
+
+<footer>Track B · Week 3 · AI vs Human Challenge &nbsp;|&nbsp; AI Builders Curriculum</footer>
+<div id="confettiLayer"></div>
+
+<script>
+  const STORAGE_KEY = 'aiVsHumanChallenge_v1';
+
+  // ---------- sticky header shadow on scroll ----------
+  const header = document.getElementById('siteHeader');
+  window.addEventListener('scroll', () => header.classList.toggle('scrolled', window.scrollY > 8));
+
+  // ---------- scroll-reveal for cards ----------
+  const cards = document.querySelectorAll('.card');
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in-view'); });
+  }, { threshold: 0.1 });
+  cards.forEach(c => revealObserver.observe(c));
+
+  // ---------- progress tracker: highlight current round while scrolling ----------
+  const trackSections = ['round1', 'round2', 'round3', 'round4', 'reflect'].map(id => document.getElementById(id));
+  const tSteps = document.querySelectorAll('.tstep');
+  const trackerObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const idx = trackSections.indexOf(entry.target);
+      if (idx === -1) return;
+      if (entry.isIntersecting) {
+        tSteps.forEach((step, i) => {
+          step.classList.toggle('current', i === idx);
+          step.classList.toggle('complete', i < idx);
+        });
+      }
+    });
+  }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+  trackSections.forEach(s => trackerObserver.observe(s));
+
+  // ---------- load saved state ----------
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch (e) { return {}; }
+  }
+  function saveState(state) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { /* storage unavailable — fail silently */ }
+  }
+  let state = loadState();
+
+  // ---------- text inputs / textareas auto-save ----------
+  const fields = document.querySelectorAll('[data-key]');
+  fields.forEach(el => {
+    const key = el.dataset.key;
+    if (state[key] !== undefined) el.value = state[key];
+    el.addEventListener('input', () => { state[key] = el.value; saveState(state); });
+  });
+
+  // ---------- toggle button groups (single-select and multi-select) ----------
+  const groups = document.querySelectorAll('[data-group]');
+  groups.forEach(group => {
+    const key = group.dataset.group;
+    const single = group.dataset.single === 'true';
+    const buttons = group.querySelectorAll('.toggle-btn');
+    const saved = state[key];
+
+    buttons.forEach(btn => {
+      const val = btn.dataset.value;
+      const isActive = single ? saved === val : Array.isArray(saved) && saved.includes(val);
+      btn.classList.toggle('active', !!isActive);
+
+      btn.addEventListener('click', () => {
+        if (single) {
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state[key] = val;
+        } else {
+          btn.classList.toggle('active');
+          const current = new Set(Array.isArray(state[key]) ? state[key] : []);
+          btn.classList.contains('active') ? current.add(val) : current.delete(val);
+          state[key] = [...current];
+        }
+        saveState(state);
+      });
+    });
+  });
+
+  // ---------- mission complete + confetti ----------
+  const missionBtn = document.getElementById('missionBtn');
+  if (state.missionComplete) {
+    missionBtn.classList.add('completed');
+    missionBtn.textContent = '✅ Mission Complete!';
+  }
+  missionBtn.addEventListener('click', () => {
+    const completed = missionBtn.classList.toggle('completed');
+    missionBtn.textContent = completed ? '✅ Mission Complete!' : '🎉 Mission Complete';
+    state.missionComplete = completed;
+    saveState(state);
+    if (completed) launchConfetti();
+  });
+
+  function launchConfetti() {
+    const layer = document.getElementById('confettiLayer');
+    const colors = ['#2E5EFF', '#8B5CF6', '#D4A017', '#1E8F5F'];
+    for (let i = 0; i < 60; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      const size = 6 + Math.random() * 6;
+      piece.style.width = size + 'px';
+      piece.style.height = (size * 0.4) + 'px';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (2.2 + Math.random() * 1.6) + 's';
+      layer.appendChild(piece);
+      setTimeout(() => piece.remove(), 4000);
+    }
+  }
+
+  // ---------- reset activity ----------
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('Reset the whole activity? This clears everything you\'ve typed and selected.')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    state = {};
+    fields.forEach(el => el.value = '');
+    document.querySelectorAll('.toggle-btn.active').forEach(b => b.classList.remove('active'));
+    missionBtn.classList.remove('completed');
+    missionBtn.textContent = '🎉 Mission Complete';
+  });
+</script>
+
+</body>
+</html>

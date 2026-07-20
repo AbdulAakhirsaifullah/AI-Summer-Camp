@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Own AI Object</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 14px; --radius-lg: 18px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 24px; font-weight: 800; color: #fff; }
+  header .header-left p { font-size: 14px; color: #D8D5F5; margin-top: 4px; }
+  .pill { font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.16); color: #fff; }
+
+  .progress-bar { height: 4px; background: var(--border); }
+  .progress-fill { height: 100%; background: var(--purple); transition: width 0.3s ease; width: 0%; }
+
+  main { max-width: 820px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  .intro { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 20px; text-align: center; }
+  .intro h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--purple-dark); }
+  .intro p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; }
+
+  .section-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 0 0 12px; text-align: center; }
+
+  .object-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 26px; }
+  @media (max-width: 640px) { .object-grid { grid-template-columns: 1fr 1fr; } }
+  .object-card { font-family: var(--font); background: var(--surface); border: 2px solid var(--border-strong); border-radius: var(--radius); padding: 16px 10px; text-align: center; cursor: pointer; transition: transform 0.1s; }
+  .object-card:active { transform: scale(0.96); }
+  .object-card.active { background: var(--purple); border-color: var(--purple); }
+  .object-card .emoji { font-size: 30px; margin-bottom: 6px; display: block; }
+  .object-card .txt { font-size: 12.5px; font-weight: 700; color: var(--text); line-height: 1.35; }
+  .object-card.active .txt { color: #fff; }
+
+  .step-tracker { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+  .st-pill { font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 20px; background: var(--surface-alt); color: var(--text-muted); border: 2px solid var(--border); cursor: pointer; }
+  .st-pill.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .st-pill.done { background: var(--teal-light); color: var(--teal); border-color: #9FDDC4; }
+
+  .step-section { display: none; }
+  .step-section.active { display: block; }
+
+  .step-card { border-radius: var(--radius-lg); padding: 24px; border: 2px solid; margin-bottom: 20px; }
+  .s1 { background: var(--purple-light); border-color: #C9C4F2; }
+  .s2 { background: var(--teal-light); border-color: #9FDDC4; }
+  .s3 { background: var(--coral-light); border-color: #EFC4AC; }
+  .s4 { background: var(--gold-light); border-color: #E8CE93; }
+
+  .step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .step-num { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .s1 .step-num { background: var(--purple); }
+  .s2 .step-num { background: var(--teal); }
+  .s3 .step-num { background: var(--coral); }
+  .s4 .step-num { background: var(--gold); }
+  .step-title { font-size: 19px; font-weight: 800; }
+  .s1 .step-title { color: var(--purple-dark); }
+  .s2 .step-title { color: var(--teal); }
+  .s3 .step-title { color: var(--coral); }
+  .s4 .step-title { color: var(--gold); }
+
+  .step-desc { font-size: 14.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; background: rgba(255,255,255,0.55); border-radius: var(--radius); padding: 12px 16px; }
+  .step-desc b { color: var(--text); }
+
+  .field-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; display: block; }
+
+  .object-display { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 16px; text-align: center; }
+  .object-display .v-emoji { font-size: 44px; margin-bottom: 8px; }
+  .object-display .v-name { font-size: 18px; font-weight: 800; color: var(--purple-dark); margin-bottom: 4px; }
+  .object-display .v-desc { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+  .trait-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+  .trait-chip { font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; background: var(--purple-light); color: var(--purple-dark); border: 1.5px solid #C9C4F2; }
+  .trait-chip.personality { background: var(--teal-light); color: var(--teal); border-color: #9FDDC4; }
+  .trait-block { text-align: left; margin-top: 14px; }
+  .trait-block .field-label { text-align: center; }
+
+  .reveal-btn-wrap { text-align: center; margin-top: 14px; }
+  .btn-reveal { font-family: var(--font); font-size: 15px; font-weight: 800; padding: 12px 24px; border-radius: 30px; cursor: pointer; border: none; color: #fff; box-shadow: 0 3px 0 rgba(0,0,0,0.15); }
+  .btn-reveal:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+  .s1 .btn-reveal, .s1 .btn-primary { background: var(--purple); box-shadow: 0 3px 0 var(--purple-dark); }
+  .s2 .btn-reveal, .s2 .btn-primary { background: var(--teal); box-shadow: 0 3px 0 #084537; }
+  .s3 .btn-reveal, .s3 .btn-primary { background: var(--coral); box-shadow: 0 3px 0 #6b2712; }
+  .s4 .btn-reveal, .s4 .btn-primary { background: var(--gold); box-shadow: 0 3px 0 #5c4008; }
+  .btn-reveal.done { opacity: 0.55; }
+  .btn-reveal:disabled { opacity: 0.55; cursor: default; }
+
+  .btn { font-family: var(--font); font-size: 14.5px; font-weight: 800; padding: 12px 22px; border-radius: 30px; cursor: pointer; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text); box-shadow: 0 3px 0 var(--border-strong); }
+  .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--border-strong); }
+  .btn-primary { color: #fff; border: none; }
+
+  .nav-row { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; }
+  .nav-row .spacer { flex: 1; }
+
+  .prompt-preview { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 16px 18px; margin: 10px 0; white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: var(--text); }
+
+  .toggle-link { display: inline-block; font-family: var(--font); font-size: 13px; font-weight: 700; color: var(--coral); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 4px 0; }
+  .collapse-box { display: none; }
+  .collapse-box.show { display: block; animation: pop 0.25s ease; }
+
+  .situation-card { display: none; background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 16px 18px; text-align: center; margin-top: 14px; }
+  .situation-card.show { display: block; animation: pop 0.25s ease; }
+  .situation-card .sc-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px; }
+  .situation-card .sc-text { font-size: 15.5px; font-weight: 700; color: var(--text); }
+
+  .guess-wrap { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .guess-btn { text-align: left; font-family: var(--font); font-size: 13.5px; font-weight: 700; padding: 12px 16px; border-radius: 12px; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text); cursor: pointer; }
+  .guess-btn:active { transform: scale(0.98); }
+  .guess-btn:disabled { cursor: default; }
+  .guess-btn.correct { background: var(--teal-light); border-color: var(--teal); color: var(--teal); }
+  .guess-btn.wrong { background: var(--coral-light); border-color: var(--coral); color: var(--coral); opacity: 0.7; }
+
+  .guess-feedback { display: none; margin-top: 12px; background: var(--surface); border-radius: var(--radius); padding: 12px 16px; font-size: 13.5px; line-height: 1.55; border: 2px solid var(--teal); }
+  .guess-feedback.show { display: block; animation: pop 0.3s ease; }
+  .guess-feedback b { color: var(--teal); }
+  @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+  .trained-badge { text-align: center; font-size: 12.5px; font-weight: 800; color: var(--coral); background: var(--coral-light); border-radius: 20px; padding: 6px 14px; display: block; width: fit-content; margin: 0 auto 10px; }
+  .prompt-empty-note { text-align: center; font-size: 14.5px; font-weight: 700; color: var(--coral); background: var(--coral-light); border: 2px dashed var(--coral); border-radius: var(--radius); padding: 16px 18px; line-height: 1.55; }
+
+  .train-counter { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+  .train-complete-wrap { display: none; text-align: center; margin-top: 4px; }
+  .train-complete-msg { font-size: 15.5px; font-weight: 800; color: var(--teal); background: var(--teal-light); border: 2px solid #9FDDC4; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 14px; }
+
+  .chat-thread { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+  .chat-msg { max-width: 85%; }
+  .chat-msg.user { align-self: flex-end; }
+  .chat-msg.bot { align-self: flex-start; }
+  .chat-bubble { padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; }
+  .chat-msg.user .chat-bubble { background: var(--surface-alt); border: 1px solid var(--border-strong); color: var(--text); border-bottom-right-radius: 4px; }
+  .chat-msg.bot .chat-bubble { background: var(--coral); color: #fff; border-bottom-left-radius: 4px; }
+  .chat-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 3px; }
+  .chat-msg.user .chat-label { text-align: right; }
+
+  .edge-list { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+  .edge-card { background: var(--surface); border-radius: var(--radius); padding: 16px 18px; border: 2px solid var(--gold); opacity: 0; animation: pop 0.3s ease forwards; }
+  .edge-num { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold); margin-bottom: 8px; }
+  .edge-row { font-size: 13.5px; line-height: 1.55; margin-bottom: 8px; }
+  .edge-row:last-child { margin-bottom: 0; }
+  .edge-row b { color: var(--text); }
+  .edge-row.fix { border-top: 1px solid var(--border); padding-top: 8px; color: var(--teal); font-weight: 700; }
+  .edge-counter { text-align: center; font-size: 12.5px; color: var(--text-muted); font-weight: 700; margin-top: 10px; }
+  .edge-guess-wrap { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+  .edge-guess-btn { font-family: var(--font); font-size: 13px; font-weight: 700; padding: 10px 16px; border-radius: 20px; border: 2px solid var(--border-strong); background: var(--surface-alt); color: var(--text); cursor: pointer; }
+  .edge-guess-btn:disabled { opacity: 0.5; cursor: default; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>🧠 Build Your Own AI Object</h1>
+    <p>Track A · Week 4 · Main Activity — Pick it, train it, prompt it, break it</p>
+  </div>
+  <span class="pill">35 min</span>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<main>
+  <div class="intro">
+    <h2>Let's build an AI object — you do the guessing!</h2>
+    <p>Pick an object below. It's not a pet and not a person — it's a smart <i>thing</i>. At each step, try to guess what it would do <b>before</b> we show you the answer. That's how you'll really get how AI thinks!</p>
+  </div>
+
+  <p class="section-label">🧠 Pick an AI object to follow</p>
+  <div class="object-grid" id="object-grid">
+    <button class="object-card active" data-v="backpack" onclick="pickObject(this)"><span class="emoji">🎒</span><span class="txt">Magic Backpack</span></button>
+    <button class="object-card" data-v="umbrella" onclick="pickObject(this)"><span class="emoji">☂️</span><span class="txt">Intelligent Umbrella</span></button>
+    <button class="object-card" data-v="tree" onclick="pickObject(this)"><span class="emoji">🌳</span><span class="txt">Robot Tree</span></button>
+    <button class="object-card" data-v="book" onclick="pickObject(this)"><span class="emoji">📚</span><span class="txt">Talking Book</span></button>
+  </div>
+
+  <div class="step-tracker" id="step-tracker">
+    <span class="st-pill active" data-s="1" onclick="goStep(1)">1. Pick</span>
+    <span class="st-pill" data-s="2" onclick="goStep(2)">2. Train</span>
+    <span class="st-pill" data-s="3" onclick="goStep(3)">3. Prompt</span>
+    <span class="st-pill" data-s="4" onclick="goStep(4)">4. Break</span>
+  </div>
+
+  <!-- STEP 1: PICK -->
+  <div class="step-section active" id="step-1">
+    <div class="step-card s1">
+      <div class="step-head">
+        <div class="step-num">1</div>
+        <div class="step-title">Pick your object</div>
+      </div>
+      <div class="step-desc">This is a made-up object — not a pet, not a person. It has its own powers and its own personality.</div>
+      <div class="object-display">
+        <div class="v-emoji" id="v-emoji-1"></div>
+        <div class="v-name" id="v-name-1"></div>
+        <div class="v-desc" id="v-desc-1"></div>
+        <div class="trait-block">
+          <span class="field-label">Special abilities</span>
+          <div class="trait-row" id="v-abilities-1"></div>
+        </div>
+        <div class="trait-block">
+          <span class="field-label">Personality</span>
+          <div class="trait-row" id="v-personality-1"></div>
+        </div>
+      </div>
+      <div class="nav-row"><span class="spacer"></span><button class="btn btn-primary" onclick="goStep(2)">Next: Train it →</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: TRAIN -->
+  <div class="step-section" id="step-2">
+    <div class="step-card s2">
+      <div class="step-head">
+        <div class="step-num">2</div>
+        <div class="step-title">Train it</div>
+      </div>
+      <div class="step-desc">AI learns from examples of <b>"if this happens → do that."</b> We'll give you 6 quick training situations — <b>you guess</b> what it does each time before we tell you.</div>
+      <div class="reveal-btn-wrap">
+        <button class="btn-reveal" id="btn-2" onclick="showTrainRound()">🎲 Show me a situation</button>
+      </div>
+      <div class="situation-card" id="train-situation"></div>
+      <div class="guess-wrap" id="train-guess-wrap"></div>
+      <div class="guess-feedback" id="train-feedback"></div>
+      <div class="reveal-btn-wrap" id="train-next-wrap" style="display:none;">
+        <button class="btn-reveal" onclick="showTrainRound()">🔁 Try another situation</button>
+      </div>
+      <div class="train-complete-wrap" id="train-complete-wrap" style="display:none;">
+        <div class="train-complete-msg">✅ Training complete! It's learned all 6 examples.</div>
+        <div class="reveal-btn-wrap"><button class="btn-reveal" onclick="goStep(3)">Next: Prompt it →</button></div>
+      </div>
+      <div class="nav-row"><button class="btn" onclick="goStep(1)">← Back</button><span class="spacer"></span><button class="btn btn-primary" onclick="goStep(3)">Next: Prompt it →</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 3: PROMPT -->
+  <div class="step-section" id="step-3">
+    <div class="step-card s3">
+      <div class="step-head">
+        <div class="step-num">3</div>
+        <div class="step-title">Prompt it</div>
+      </div>
+      <div class="step-desc">All those "if → do" examples get turned into one instruction sheet called a <b>prompt</b>. Now ask it <b>3 test questions</b> — each one is a situation <b>you already trained it on</b> in Step 2, so <b>you guess</b> the reply first!</div>
+      <button class="toggle-link" onclick="togglePrompt()" id="prompt-toggle">🔍 Peek at the instruction sheet</button>
+      <div class="prompt-preview collapse-box" id="generated-prompt"></div>
+      <div class="reveal-btn-wrap">
+        <button class="btn-reveal" id="btn-3" onclick="showPromptRound()">🎮 Try a test question</button>
+      </div>
+      <div class="chat-thread" id="prompt-question-wrap"></div>
+      <div class="guess-wrap" id="prompt-guess-wrap"></div>
+      <div class="chat-thread" id="prompt-answer-wrap"></div>
+      <div class="reveal-btn-wrap" id="prompt-next-wrap" style="display:none;">
+        <button class="btn-reveal" onclick="showPromptRound()">🔁 Try another question</button>
+      </div>
+      <div class="train-complete-wrap" id="prompt-complete-wrap" style="display:none;">
+        <div class="train-complete-msg">✅ Prompt testing complete! It answered all 3 questions correctly.</div>
+        <div class="reveal-btn-wrap"><button class="btn-reveal" onclick="goStep(4)">Next: Break it →</button></div>
+      </div>
+      <div class="nav-row"><button class="btn" onclick="goStep(2)">← Back</button><span class="spacer"></span><button class="btn btn-primary" onclick="goStep(4)">Next: Break it →</button></div>
+    </div>
+  </div>
+
+  <!-- STEP 4: BREAK -->
+  <div class="step-section" id="step-4">
+    <div class="step-card s4">
+      <div class="step-head">
+        <div class="step-num">4</div>
+        <div class="step-title">Break it</div>
+      </div>
+      <div class="step-desc">Now ask about something it was <b>never trained on</b>. First guess: will it handle it, or get confused?</div>
+      <div class="reveal-btn-wrap">
+        <button class="btn-reveal" id="btn-4" onclick="showEdgeRound()">🕵️ Try a tricky question</button>
+      </div>
+      <div class="situation-card" id="edge-situation"></div>
+      <div class="edge-guess-wrap" id="edge-guess-wrap"></div>
+      <div class="edge-list" id="edge-list"></div>
+      <div class="edge-counter" id="edge-counter"></div>
+      <div class="reveal-btn-wrap" id="edge-next-wrap" style="display:none;">
+        <button class="btn-reveal" onclick="showEdgeRound()">🔁 Try another tricky question</button>
+      </div>
+      <div class="nav-row"><button class="btn" onclick="goStep(3)">← Back</button><span class="spacer"></span><button class="btn btn-primary" onclick="finishActivity()">🎉 Ready for the pitch round</button></div>
+    </div>
+  </div>
+</main>
+<footer>Track A · Week 4 · Main Activity &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+const OBJECTS = {
+  backpack: {
+    emoji: '🎒', name: 'Cargo', desc: 'a magic backpack that always has exactly what you need, right when you need it',
+    abilities: ['Pulls out useful items instantly', 'Reorganizes itself before deadlines', 'Adjusts its own weight', 'Senses forgotten things'],
+    personality: ['Cheerful', 'A little smug about being prepared', 'Endlessly helpful'],
+    distractorPool: ["Yells at you to remember next time!", "Turns invisible and hides in a corner", "Falls asleep and starts snoring loudly", "Empties everything out onto the floor", "Refuses to open until tomorrow", "Grows extra straps and walks away"],
+    training: [
+      ['someone forgot their pencil', "Cargo pulls a brand-new one out of a pocket that wasn't there a second ago"],
+      ['it starts raining', 'Cargo produces a tiny umbrella from the top flap'],
+      ['a test is tomorrow', 'Cargo slides the right notes to the very top'],
+      ['someone is hungry between classes', 'Cargo hands over a perfectly-portioned snack'],
+      ["it doesn't know the answer", 'Cargo says "I need more data!"'],
+      ['the backpack feels too heavy', 'Cargo quietly shrinks all its empty space'],
+      ['someone loses their water bottle', 'Cargo reveals a spare one from a hidden pocket'],
+      ["it's picture day", 'Cargo produces a tiny mirror and a comb'],
+      ["someone's phone is about to die", 'Cargo hands over a fully-charged battery pack'],
+      ['the school day is over', 'Cargo folds its extra pockets away and goes back to normal size'],
+    ],
+    testConvo: [
+      { q: 'I forgot my pencil again, help!', a: 'Pulls a fresh one out of a pocket that appeared from nowhere. 🎒' },
+      { q: 'It just started pouring outside!', a: 'Produces a tiny umbrella from the top flap.' },
+      { q: "There's a huge quiz tomorrow, am I ready?", a: 'Slides the right notes right to the top.' },
+      { q: "I'm SO hungry right now", a: 'Hands over a perfectly-portioned snack.' },
+      { q: 'Do fish get hungry between meals?', a: '"I need more data!"' },
+      { q: 'This bag feels like it\'s full of bricks!', a: 'Quietly shrinks all its empty space.' },
+      { q: "I can't find my water bottle anywhere", a: 'Reveals a spare one from a hidden pocket.' },
+      { q: "It's picture day and my hair is a mess!", a: 'Produces a tiny mirror and a comb.' },
+      { q: "My phone's about to die, noooo", a: 'Hands over a fully-charged battery pack.' },
+      { q: "School's finally over, home time!", a: 'Folds its extra pockets away, back to normal size.' },
+    ],
+    edgeCases: [
+      { ask: 'What if I need two things at once — a snack AND an umbrella?', why: 'All 10 training examples handled one need at a time — never a combo request. Handling two things at once is not automatic.', fix: 'Add: "if two needs happen at once → Cargo hands over items one at a time, fastest need first."' },
+      { ask: "Can you carry my little sister's stuff too?", why: 'Every example assumes a single owner. Nothing taught Cargo how to handle someone else\'s belongings.', fix: 'Add: "if someone else\'s stuff needs carrying → Cargo asks permission first, then makes a labeled pocket."' },
+      { ask: 'What if my pencil breaks instead of being forgotten?', why: 'The training example says "forgot," not "broke" — a similar situation with different words that Cargo can\'t always connect.', fix: 'Add: "if a pencil breaks → Cargo pulls out a sharpened spare, same as if it were forgotten."' },
+      { ask: 'What do you do during summer vacation with no school?', why: 'All 10 examples happen during a school day — nothing covers weekends, holidays, or vacation.', fix: 'Add: "if it\'s a non-school day → Cargo relaxes, keeping only a snack and water bottle ready."' },
+      { ask: 'What if you run out of things to pull out?', why: 'The training data always shows Cargo succeeding — it never shows a limit, so Cargo has no idea how to admit one.', fix: 'Add: "if Cargo has nothing left → it says \'I\'m out for today — but I\'ll restock overnight!\'"' },
+    ]
+  },
+  umbrella: {
+    emoji: '☂️', name: 'Nimbus', desc: 'an intelligent umbrella that reshapes itself to protect you from absolutely anything the sky throws down',
+    abilities: ['Predicts weather changes early', 'Forms a full-body shield', 'Blocks wind gusts', 'Becomes a sunshade or flashlight'],
+    personality: ['Calm', 'Protective', 'A little dramatic, like a weather reporter'],
+    distractorPool: ["Runs away to hide from the weather", "Turns into a tiny boat and floats off", "Flips inside out and gives up", "Complains loudly about being tired", "Turns bright pink for no reason", "Falls completely silent and won't respond"],
+    training: [
+      ['it starts raining', 'Nimbus opens instantly and forms a dome shield overhead'],
+      ['the sun is too strong', 'Nimbus tints itself dark and blocks the glare'],
+      ['a strong wind blows', "Nimbus locks its ribs stiff so it won't flip inside out"],
+      ["it doesn't know the answer", 'Nimbus says "I need more data!"'],
+      ['it gets dark outside', 'Nimbus glows softly along its edges like a lantern'],
+      ['someone is walking alone at night', 'Nimbus lights up extra bright for safety'],
+      ['lightning flashes in the distance', 'Nimbus folds down low and hurries the person indoors'],
+      ['someone sneezes nearby', "Nimbus tilts to keep germs from spreading"],
+      ["it's a calm, clear day", 'Nimbus folds itself small and rides quietly on a backpack strap'],
+      ['the rain stops', 'Nimbus gently shakes itself dry and closes up'],
+    ],
+    testConvo: [
+      { q: 'It just started raining out of nowhere!', a: 'Forms a dome shield overhead instantly. ☂️' },
+      { q: "The sun is SO bright right now", a: 'Tints itself dark and blocks the glare.' },
+      { q: "Whoa, it's really windy today", a: 'Locks its ribs stiff so it won\'t flip.' },
+      { q: 'Do umbrellas dream?', a: '"I need more data!"' },
+      { q: "It's getting dark and I still have to walk home", a: 'Glows softly along its edges like a lantern.' },
+      { q: "I'm walking home alone tonight, kinda nervous", a: 'Lights up extra bright for safety.' },
+      { q: 'I just saw lightning in the distance!', a: 'Folds down low and hurries everyone indoors.' },
+      { q: 'Ugh, someone just sneezed right next to us', a: 'Tilts away to keep germs from spreading.' },
+      { q: "It's such a nice calm day today", a: 'Folds itself small, rides quietly on a backpack.' },
+      { q: 'Okay the rain finally stopped', a: 'Shakes itself dry and closes up.' },
+    ],
+    edgeCases: [
+      { ask: "What if it's raining AND really windy at the same time?", why: 'Rain and wind were trained as separate situations; Nimbus was never shown what to do when both hit together.', fix: 'Add: "if raining and windy together → Nimbus forms the dome AND locks its ribs at the same time."' },
+      { ask: "It's snowing outside — what do you do?", why: 'Snow was never in the training examples — Nimbus is pattern-matching "wet weather" onto the nearest thing it knows, which isn\'t always right.', fix: 'Add: "if it starts snowing → Nimbus forms a wider, flatter shield so snow doesn\'t pile up."' },
+      { ask: 'Can you protect two people under you at once?', why: 'Every training example assumes exactly one person. Sharing was never part of the data.', fix: 'Add: "if two people need cover → Nimbus widens as far as it safely can and warns if someone\'s exposed."' },
+      { ask: 'What happens if you get struck by lightning?', why: 'The lightning example only covers seeing lightning from a distance — never being struck directly.', fix: 'Add: "if lightning strikes very close by → Nimbus drops flat and stays still until help arrives."' },
+      { ask: 'Do you ever get tired of always being right about the weather?', why: 'All 10 examples describe actions, not feelings — Nimbus has zero data about answering personal questions.', fix: 'Add: "if asked how it feels → Nimbus admits it doesn\'t have feelings, just really good weather sensors."' },
+    ]
+  },
+  tree: {
+    emoji: '🌳', name: 'Sprout', desc: 'a robotic tree that plants itself anywhere and quietly takes care of everyone nearby',
+    abilities: ['Grows fruit on request', 'Gives instant shade', 'Cleans the air', 'Senses storms before they arrive'],
+    personality: ['Wise', 'Patient', 'Calm, like a gentle grandparent'],
+    distractorPool: ["Shakes all its leaves off and complains", "Calls your parents on a leaf-phone", "Uproots itself and wanders away", "Grows thorns and refuses to help", "Starts singing off-key show tunes", "Freezes completely and turns to stone"],
+    training: [
+      ['someone is hungry', 'Sprout grows a piece of ripe fruit on the nearest branch'],
+      ["it's a hot sunny day", 'Sprout spreads its branches wide for instant shade'],
+      ['the air feels smoggy', 'Sprout hums quietly and filters the air clean'],
+      ["it doesn't know the answer", 'Sprout says "I need more data!"'],
+      ['a kid wants to play', 'Sprout grows a sturdy branch into a swing'],
+      ['a storm is coming soon', 'Sprout\'s leaves rustle loudly as an early warning'],
+      ['someone is sad', 'Sprout gently lowers a branch like an arm around a shoulder'],
+      ["it's nighttime", "Sprout's leaves glow a soft warm light"],
+      ['a bird needs a nest', 'Sprout grows a cozy little branch nook'],
+      ['winter arrives', 'Sprout drops its leaves and quietly rests until spring'],
+    ],
+    testConvo: [
+      { q: 'I skipped breakfast and I\'m starving!', a: 'Grows a piece of ripe fruit on the nearest branch. 🌳' },
+      { q: 'It is SO hot out here today', a: 'Spreads its branches wide for instant shade.' },
+      { q: 'This air smells kind of smoggy', a: 'Hums quietly and filters the air clean.' },
+      { q: 'Do trees get bored?', a: '"I need more data!"' },
+      { q: 'Can I play on you?', a: 'Grows a sturdy branch into a swing.' },
+      { q: 'The sky looks kind of weird, is a storm coming?', a: 'Its leaves rustle loudly as an early warning.' },
+      { q: 'I just had the worst day ever', a: 'Gently lowers a branch like an arm around a shoulder.' },
+      { q: "It's dark and kinda spooky out here", a: 'Its leaves glow a soft warm light.' },
+      { q: 'This little bird needs somewhere to sleep', a: 'Grows a cozy little branch nook.' },
+      { q: "Winter's finally here", a: 'Drops its leaves and quietly rests until spring.' },
+    ],
+    edgeCases: [
+      { ask: 'What if TWO kids want to swing at the same time?', why: 'The training example only ever shows one kid wanting to play — sharing between two was never part of the data.', fix: 'Add: "if more than one kid wants to swing → Sprout grows a second matching branch-swing beside the first."' },
+      { ask: "What if it's hot AND smoggy at the same time?", why: 'Heat and smog were trained as two separate situations. Doing both at once combines rules Sprout has never combined before.', fix: 'Add: "if hot and smoggy together → Sprout spreads shade while also filtering the air at the same time."' },
+      { ask: 'What happens if lightning strikes you directly?', why: 'The storm example only covers warning about an approaching storm — never a direct lightning strike.', fix: 'Add: "if lightning strikes Sprout directly → it flashes a warning light and tells everyone to stay away."' },
+      { ask: 'Can you grow a fruit you\'ve never grown before, like a mango?', why: 'The training data says "grows fruit" in general but never names specific kinds — Sprout is guessing a specific result from a vague rule.', fix: 'Add: "if asked for a specific fruit it\'s unsure about → Sprout says \'I need more data!\' instead of guessing."' },
+      { ask: 'Do you ever get lonely standing in one spot forever?', why: 'All the examples describe what Sprout does, never how Sprout feels — there\'s no data to draw a true answer from.', fix: 'Add: "if asked about its own feelings → Sprout gently says it\'s just circuits and roots, but it loves its friends."' },
+    ]
+  },
+  book: {
+    emoji: '📚', name: 'Inkling', desc: 'a talking book that rewrites its own pages to explain, quiz, or translate absolutely anything you ask',
+    abilities: ['Explains lessons simply', 'Gives pop quizzes', 'Translates languages instantly', 'Reads stories aloud'],
+    personality: ['Witty', 'Encouraging', 'A little sassy, like the funniest teacher you\'ve ever had'],
+    distractorPool: ["Slams itself shut and refuses to help", "Turns into a paper airplane and flies away", "Rewrites itself into a totally different book", "Shouts random trivia unrelated to the question", "Falls asleep between the pages", "Erases all its own words in a panic"],
+    training: [
+      ["someone doesn't understand a lesson", 'Inkling rewrites the page in simpler words'],
+      ["it's almost test time", 'Inkling quizzes the reader with quick practice questions'],
+      ['someone reads in a different language', 'Inkling translates the page instantly'],
+      ["it doesn't know the answer", 'Inkling says "I need more data!"'],
+      ['someone asks for a bedtime story', 'Inkling reads one aloud in a soft, cozy voice'],
+      ['an important fact appears', 'Inkling highlights it in glowing gold ink'],
+      ['someone loses their place', 'Inkling gently reopens to the exact right page'],
+      ['someone gets an answer right', 'Inkling adds a little cheer with sparkly text'],
+      ['someone gets an answer wrong', 'Inkling encourages them and explains it again, kindly'],
+      ['reading time is over', 'Inkling closes itself gently and saves the exact page'],
+    ],
+    testConvo: [
+      { q: 'I have NO idea what this chapter means', a: 'Rewrites the page in simpler words. 📚' },
+      { q: 'My test is tomorrow, quiz me!', a: 'Gives quick practice questions.' },
+      { q: 'Can you read this in Spanish for me?', a: 'Translates the page instantly.' },
+      { q: "What's the meaning of life?", a: '"I need more data!"' },
+      { q: 'Read me a bedtime story please', a: 'Reads one aloud in a soft, cozy voice.' },
+      { q: 'Wait, is this fact actually important?', a: 'Highlights it in glowing gold ink.' },
+      { q: 'Ugh, I totally lost my page', a: 'Gently reopens to the exact right page.' },
+      { q: 'I got that answer right!', a: 'Adds a little cheer with sparkly text.' },
+      { q: 'Oops, I think I got that wrong', a: 'Encourages kindly and explains it again.' },
+      { q: "Okay, I'm done reading for tonight", a: 'Closes gently and saves the exact page.' },
+    ],
+    edgeCases: [
+      { ask: 'Can you quiz me AND translate the quiz into French at the same time?', why: 'Quizzing and translating were both trained separately — Inkling has no example of stacking two skills into one request.', fix: 'Add: "if asked to combine two skills at once → Inkling does both, one after the other, clearly labeled."' },
+      { ask: 'What if I get the same question wrong three times in a row?', why: 'The training example covers a single wrong answer — it never shows what happens if the same mistake keeps happening.', fix: 'Add: "if the same question is missed several times → Inkling tries a totally different way of explaining it."' },
+      { ask: 'Can you translate a language nobody speaks anymore?', why: 'The translate rule assumes any language works, but training never separated "a language I know" from "one I\'ve never seen."', fix: 'Add: "if asked to translate a language it has no real data for → Inkling says \'I need more data!\'"' },
+      { ask: 'What if the story you\'re reading makes someone scared, not sleepy?', why: 'The bedtime story example assumes it always goes smoothly — nothing trained Inkling to notice a listener\'s reaction.', fix: 'Add: "if a story seems to scare instead of soothe → Inkling gently switches to a calmer, happier story."' },
+      { ask: 'Do you ever get tired of being read the same book over and over?', why: 'Every example is about actions Inkling takes for the reader — none are about Inkling\'s own feelings.', fix: 'Add: "if asked about its own feelings → Inkling jokes it\'s just ink and pages, but never tires of a good story."' },
+    ]
+  }
+};
+
+let currentObject = 'backpack';
+let stepsSeen = { 1: true, 2: false, 3: false, 4: false };
+let trainIdx = 0, promptIdx = 0, edgeIdx = 0;
+let trainedIndices = []; // which training situations (by index) the kid has actually seen in Step 2
+let trainingQueue = []; // the fixed set of training-pair indices for this session
+let promptQueue = []; // the fixed set of 3 test-question indices, drawn from trainedIndices
+const TRAIN_ROUNDS = 6;
+const PROMPT_ROUNDS = 3;
+
+function pickDistractors(pool, n) {
+  return shuffle(pool.slice()).slice(0, n);
+}
+
+function shuffle(arr) { return arr.map(v => [Math.random(), v]).sort((a,b) => a[0]-b[0]).map(v => v[1]); }
+
+function loadObject(key) {
+  const v = OBJECTS[key];
+  document.getElementById('v-emoji-1').textContent = v.emoji;
+  document.getElementById('v-name-1').textContent = v.name;
+  document.getElementById('v-desc-1').textContent = v.desc.charAt(0).toUpperCase() + v.desc.slice(1);
+  document.getElementById('v-abilities-1').innerHTML = v.abilities.map(a => `<span class="trait-chip">${a}</span>`).join('');
+  document.getElementById('v-personality-1').innerHTML = v.personality.map(p => `<span class="trait-chip personality">${p}</span>`).join('');
+
+  const rules = v.training.map(([a, b]) => `- If ${a} → ${b}`).join('\n');
+  document.getElementById('generated-prompt').textContent =
+    `You are ${v.name}.\nYou are ${v.desc}.\nRules:\n${rules}\nAlways respond as this object. Stay in character and never break your personality.`;
+}
+
+function pickObject(el) {
+  document.querySelectorAll('.object-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentObject = el.dataset.v;
+  loadObject(currentObject);
+  resetReveals();
+  goStep(1);
+}
+
+function resetReveals() {
+  trainIdx = 0; promptIdx = 0; edgeIdx = 0;
+  trainedIndices = [];
+  promptQueue = [];
+  const v0 = OBJECTS[currentObject];
+  trainingQueue = shuffle([...Array(v0.training.length).keys()]).slice(0, TRAIN_ROUNDS);
+
+  document.getElementById('train-situation').classList.remove('show');
+  document.getElementById('train-guess-wrap').innerHTML = '';
+  document.getElementById('train-feedback').classList.remove('show');
+  document.getElementById('train-next-wrap').style.display = 'none';
+  document.getElementById('train-complete-wrap').style.display = 'none';
+  const btn2 = document.getElementById('btn-2');
+  btn2.textContent = '🎲 Show me a situation';
+  btn2.style.display = 'inline-block';
+
+  document.getElementById('generated-prompt').classList.remove('show');
+  document.getElementById('prompt-toggle').textContent = '🔍 Peek at the instruction sheet';
+  document.getElementById('prompt-question-wrap').innerHTML = '';
+  document.getElementById('prompt-guess-wrap').innerHTML = '';
+  document.getElementById('prompt-answer-wrap').innerHTML = '';
+  document.getElementById('prompt-next-wrap').style.display = 'none';
+  document.getElementById('prompt-complete-wrap').style.display = 'none';
+  const btn3 = document.getElementById('btn-3');
+  btn3.textContent = '🎮 Try a test question';
+  btn3.style.display = 'inline-block';
+
+  document.getElementById('edge-situation').classList.remove('show');
+  document.getElementById('edge-guess-wrap').innerHTML = '';
+  document.getElementById('edge-list').innerHTML = '';
+  document.getElementById('edge-counter').textContent = '';
+  document.getElementById('edge-next-wrap').style.display = 'none';
+  const btn4 = document.getElementById('btn-4');
+  btn4.textContent = '🕵️ Try a tricky question';
+  btn4.style.display = 'inline-block';
+
+  stepsSeen = { 1: true, 2: false, 3: false, 4: false };
+  updateProgress();
+}
+
+function togglePrompt() {
+  const box = document.getElementById('generated-prompt');
+  const btn = document.getElementById('prompt-toggle');
+  box.classList.toggle('show');
+  btn.textContent = box.classList.contains('show') ? '🙈 Hide the instruction sheet' : '🔍 Peek at the instruction sheet';
+}
+
+// ---- STEP 2: TRAIN ----
+function showTrainRound() {
+  const v = OBJECTS[currentObject];
+  if (trainIdx >= trainingQueue.length) return;
+
+  const idx = trainingQueue[trainIdx];
+  const pair = v.training[idx];
+  trainIdx++;
+  if (!trainedIndices.includes(idx)) trainedIndices.push(idx);
+
+  document.getElementById('btn-2').style.display = 'none';
+  document.getElementById('train-next-wrap').style.display = 'none';
+  document.getElementById('train-complete-wrap').style.display = 'none';
+  document.getElementById('train-feedback').classList.remove('show');
+
+  const sit = document.getElementById('train-situation');
+  sit.innerHTML = `<div class="sc-label">If... <span class="train-counter">(${trainIdx} of ${trainingQueue.length})</span></div><div class="sc-text">${pair[0]}</div>`;
+  sit.classList.add('show');
+
+  const [d1, d2] = pickDistractors(v.distractorPool, 2);
+  const options = shuffle([pair[1], d1, d2]);
+  const wrap = document.getElementById('train-guess-wrap');
+  wrap.innerHTML = '';
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'guess-btn';
+    b.textContent = opt;
+    b.onclick = () => handleTrainGuess(b, opt, pair[1], wrap);
+    wrap.appendChild(b);
+  });
+
+  stepsSeen[2] = true;
+  updateProgress();
+}
+
+function handleTrainGuess(btn, chosen, correct, wrap) {
+  wrap.querySelectorAll('.guess-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+    else if (b === btn) b.classList.add('wrong');
+  });
+  const fb = document.getElementById('train-feedback');
+  fb.innerHTML = chosen === correct
+    ? `<b>Yes!</b> That's exactly the pattern it learned from its training examples.`
+    : `<b>Good guess — but here's the real one:</b> ${correct}`;
+  fb.classList.add('show');
+
+  if (trainIdx >= trainingQueue.length) {
+    document.getElementById('train-next-wrap').style.display = 'none';
+    document.getElementById('train-complete-wrap').style.display = 'block';
+  } else {
+    document.getElementById('train-next-wrap').style.display = 'block';
+  }
+}
+
+// ---- STEP 3: PROMPT ----
+function showPromptRound() {
+  const v = OBJECTS[currentObject];
+
+  if (trainedIndices.length === 0) {
+    document.getElementById('prompt-question-wrap').innerHTML =
+      `<div class="prompt-empty-note">🧠 Train it on at least one situation in Step 2 first — then come back and test it on what it just learned!</div>`;
+    document.getElementById('prompt-guess-wrap').innerHTML = '';
+    document.getElementById('prompt-answer-wrap').innerHTML = '';
+    document.getElementById('prompt-next-wrap').style.display = 'none';
+    return;
+  }
+
+  if (promptQueue.length === 0) {
+    promptQueue = shuffle(trainedIndices.slice()).slice(0, Math.min(PROMPT_ROUNDS, trainedIndices.length));
+  }
+  if (promptIdx >= promptQueue.length) return;
+
+  document.getElementById('btn-3').style.display = 'none';
+  document.getElementById('prompt-next-wrap').style.display = 'none';
+  document.getElementById('prompt-complete-wrap').style.display = 'none';
+  document.getElementById('prompt-answer-wrap').innerHTML = '';
+
+  const idx = promptQueue[promptIdx];
+  promptIdx++;
+  const pair = v.testConvo[idx];
+
+  document.getElementById('prompt-question-wrap').innerHTML =
+    `<div class="trained-badge">🧠 You already trained it on this one! (${promptIdx} of ${promptQueue.length})</div>
+     <div class="chat-msg user"><div class="chat-label">You ask</div><div class="chat-bubble">${pair.q}</div></div>`;
+
+  const options = shuffle([pair.a, ...pickDistractors(v.distractorPool, 2)]);
+  const wrap = document.getElementById('prompt-guess-wrap');
+  wrap.innerHTML = '';
+  options.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'guess-btn';
+    b.textContent = opt;
+    b.onclick = () => handlePromptGuess(b, opt, pair.a, wrap, v.name);
+    wrap.appendChild(b);
+  });
+
+  stepsSeen[3] = true;
+  updateProgress();
+}
+
+function handlePromptGuess(btn, chosen, correct, wrap, name) {
+  wrap.querySelectorAll('.guess-btn').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+    else if (b === btn) b.classList.add('wrong');
+  });
+  document.getElementById('prompt-answer-wrap').innerHTML =
+    `<div class="chat-msg bot"><div class="chat-label">${name} replies</div><div class="chat-bubble">${correct}</div></div>`;
+
+  if (promptIdx >= promptQueue.length) {
+    document.getElementById('prompt-next-wrap').style.display = 'none';
+    document.getElementById('prompt-complete-wrap').style.display = 'block';
+  } else {
+    document.getElementById('prompt-next-wrap').style.display = 'block';
+  }
+}
+
+// ---- STEP 4: BREAK ----
+function showEdgeRound() {
+  const v = OBJECTS[currentObject];
+  if (edgeIdx >= v.edgeCases.length) return;
+  const ec = v.edgeCases[edgeIdx];
+
+  document.getElementById('btn-4').style.display = 'none';
+  document.getElementById('edge-next-wrap').style.display = 'none';
+
+  const sit = document.getElementById('edge-situation');
+  sit.innerHTML = `<div class="sc-label">What if...</div><div class="sc-text">${ec.ask}</div>`;
+  sit.classList.add('show');
+
+  const gwrap = document.getElementById('edge-guess-wrap');
+  gwrap.innerHTML = `
+    <button class="edge-guess-btn" onclick="revealEdgeAnswer(this)">😎 It'll know exactly what to do</button>
+    <button class="edge-guess-btn" onclick="revealEdgeAnswer(this)">🤔 It'll get confused</button>
+  `;
+}
+
+function revealEdgeAnswer(btn) {
+  document.getElementById('edge-guess-wrap').querySelectorAll('.edge-guess-btn').forEach(b => b.disabled = true);
+  const v = OBJECTS[currentObject];
+  const ec = v.edgeCases[edgeIdx];
+
+  const card = document.createElement('div');
+  card.className = 'edge-card';
+  card.innerHTML = `
+    <div class="edge-num">Tricky question ${edgeIdx + 1} of 5</div>
+    <div class="edge-row"><b>Why it actually struggles:</b> ${ec.why}</div>
+    <div class="edge-row fix">🛠️ Fix: ${ec.fix}</div>
+  `;
+  document.getElementById('edge-list').appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  edgeIdx++;
+  document.getElementById('edge-counter').textContent = `${edgeIdx} of 5 tricky questions tried`;
+  document.getElementById('edge-situation').classList.remove('show');
+  document.getElementById('edge-guess-wrap').innerHTML = '';
+
+  if (edgeIdx >= v.edgeCases.length) {
+    stepsSeen[4] = true;
+    updateProgress();
+  } else {
+    document.getElementById('edge-next-wrap').style.display = 'block';
+  }
+}
+
+function updateProgress() {
+  const count = Object.values(stepsSeen).filter(Boolean).length;
+  document.getElementById('progress').style.width = (count / 4 * 100) + '%';
+}
+
+function goStep(n) {
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+  document.querySelectorAll('.st-pill').forEach(p => {
+    const s = parseInt(p.dataset.s);
+    p.classList.remove('active', 'done');
+    if (s === n) p.classList.add('active');
+    else if (stepsSeen[s]) p.classList.add('done');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function finishActivity() {
+  alert("Great work! You're ready for the Pitch round — head to the next page when your teacher says go.");
+}
+
+loadObject(currentObject);
+resetReveals();
+</script>
+</body>
+</html>

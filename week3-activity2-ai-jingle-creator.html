@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Jingle Creator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 14px; --radius-lg: 18px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 22px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 24px; font-weight: 800; color: #fff; }
+  header .header-left p { font-size: 14px; color: #D8D5F5; margin-top: 4px; }
+  .pill { font-size: 13px; font-weight: 700; padding: 7px 15px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.16); color: #fff; text-decoration: none; }
+
+  main { max-width: 820px; margin: 0 auto; padding: 26px 18px 60px; }
+
+  .intro { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 20px 22px; margin-bottom: 20px; text-align: center; }
+  .intro h2 { font-size: 18px; font-weight: 800; margin-bottom: 8px; color: var(--purple-dark); }
+  .intro p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; }
+
+  .instructor-note { background: var(--gold-light); border: 2px solid #E8CE93; border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 24px; font-size: 13.5px; color: #6b4f0f; line-height: 1.5; }
+  .instructor-note b { color: var(--gold); }
+
+  .challenge-banner { background: var(--purple); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 22px; text-align: center; }
+  .challenge-banner .txt { color: #fff; font-size: 14.5px; font-weight: 700; line-height: 1.5; }
+  .challenge-banner .sub { color: #D8D5F5; font-size: 12.5px; margin-top: 4px; }
+
+  .picker-wrap { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius-lg); padding: 22px; margin-bottom: 20px; }
+  .picker-row { margin-bottom: 20px; }
+  .picker-row:last-child { margin-bottom: 0; }
+  .picker-label { font-size: 13px; font-weight: 800; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .picker-label .step-badge { width: 22px; height: 22px; border-radius: 50%; background: var(--purple); color: #fff; font-size: 11.5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-family: var(--font); font-size: 13.5px; font-weight: 700; padding: 9px 15px; border-radius: 30px; border: 2px solid var(--border-strong); background: var(--surface-alt); color: var(--text); cursor: pointer; transition: transform 0.1s; }
+  .chip:active { transform: scale(0.96); }
+  .chip.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+
+  .jingle-panel { border-radius: var(--radius-lg); padding: 24px; border: 2px solid #C9C4F2; background: var(--purple-light); }
+  .jingle-panel h3 { font-size: 17px; font-weight: 800; margin-bottom: 12px; text-align: center; color: var(--purple-dark); }
+
+  .field-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px; display: block; }
+
+  .example-prompt { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
+  .example-prompt .txt { font-size: 15.5px; font-style: italic; color: var(--text); }
+
+  .reveal-btn-wrap { text-align: center; }
+  .btn-reveal { font-family: var(--font); font-size: 15.5px; font-weight: 800; padding: 12px 26px; border-radius: 30px; cursor: pointer; border: none; color: #fff; background: var(--purple); box-shadow: 0 3px 0 var(--purple-dark); }
+  .btn-reveal:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--purple-dark); }
+  .btn-reveal.done { opacity: 0.55; }
+
+  .result-box { display: none; margin-top: 18px; background: var(--surface); border-radius: var(--radius); padding: 18px 20px; border: 2px solid var(--purple); }
+  .result-box.show { display: block; animation: pop 0.25s ease; }
+  @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+  .result-box .r-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--purple-dark); margin-bottom: 10px; text-align: center; }
+  .lyric-lines { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.7; text-align: center; font-style: italic; margin-bottom: 12px; padding: 12px; background: var(--purple-light); border-radius: var(--radius); }
+  .r-desc { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; border-top: 1px solid var(--border); padding-top: 10px; }
+
+  .compare-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .btn { font-family: var(--font); font-size: 13.5px; font-weight: 700; padding: 10px 18px; border-radius: 30px; cursor: pointer; border: 2px solid var(--border-strong); background: var(--surface); color: var(--text); }
+  .btn:hover { background: var(--surface-alt); }
+
+  .tool-link { display: inline-flex; align-items: center; gap: 6px; background: var(--purple); color: #fff; font-weight: 700; font-size: 14px; padding: 10px 20px; border-radius: 30px; text-decoration: none; box-shadow: 0 3px 0 var(--purple-dark); }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>🎵 AI Jingle Creator</h1>
+    <p>Track A · Week 3 · Activity 2 — Same topic, different genre. See the difference.</p>
+  </div>
+  <a class="pill" href="https://suno.com" target="_blank" rel="noopener">🔗 suno.com</a>
+</header>
+
+<main>
+  <div class="intro">
+    <h2>Pick a topic. Pick a genre. See what changes.</h2>
+    <p>The genre changes everything about how a song sounds — even when the topic stays exactly the same. Try the same topic with two or three different genres and compare!</p>
+  </div>
+
+  <div class="instructor-note">
+    👩‍🏫 <b>Note for instructors:</b> Suno needs an account to make real songs. Once the class picks a favorite topic + genre combo, run it live on the instructor's Suno account so everyone can hear the real thing.
+  </div>
+
+  <div class="challenge-banner">
+    <div class="txt">🎯 Challenge: keep the topic the same, swap only the genre — 3 times.</div>
+    <div class="sub">What stays the same about the lyrics? What completely changes?</div>
+  </div>
+
+  <div class="picker-wrap">
+    <div class="picker-row">
+      <div class="picker-label"><span class="step-badge">1</span> Pick a topic</div>
+      <div class="chip-row" id="topic-group">
+        <button class="chip active" data-topic="homework" onclick="pickChip(this,'topic-group')">📚 Homework</button>
+        <button class="chip" data-topic="pizza" onclick="pickChip(this,'topic-group')">🍕 Pizza</button>
+        <button class="chip" data-topic="dog" onclick="pickChip(this,'topic-group')">🐶 My dog</button>
+        <button class="chip" data-topic="room" onclick="pickChip(this,'topic-group')">🧹 Cleaning my room</button>
+      </div>
+    </div>
+    <div class="picker-row">
+      <div class="picker-label"><span class="step-badge">2</span> Pick a genre</div>
+      <div class="chip-row" id="genre-group">
+        <button class="chip active" data-genre="punk" onclick="pickChip(this,'genre-group')">🎸 Punk rock</button>
+        <button class="chip" data-genre="lullaby" onclick="pickChip(this,'genre-group')">🌙 Lullaby</button>
+        <button class="chip" data-genre="country" onclick="pickChip(this,'genre-group')">🤠 Country</button>
+        <button class="chip" data-genre="rap" onclick="pickChip(this,'genre-group')">🎤 Rap</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="jingle-panel">
+    <h3 id="panel-title">🎸 Punk Rock — Homework</h3>
+    <span class="field-label">The prompt</span>
+    <div class="example-prompt"><span class="txt" id="prompt-text"></span></div>
+    <div class="reveal-btn-wrap">
+      <button class="btn-reveal" id="btn-reveal" onclick="showJingle()">✨ See what AI made</button>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div class="r-label">Sample lyric snippet</div>
+      <div class="lyric-lines" id="lyric-lines"></div>
+      <div class="r-desc" id="r-desc"></div>
+    </div>
+
+    <div class="compare-row">
+      <button class="btn" onclick="keepTopicSwapGenre()">🔁 Same topic, different genre</button>
+      <button class="btn" onclick="resetCurrent()">🔄 Reset</button>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top: 22px;">
+    <a class="tool-link" href="https://suno.com" target="_blank" rel="noopener">🚀 Open Suno to hear the real thing</a>
+  </div>
+</main>
+<footer>Track A · Week 3 · Activity 2 &nbsp;|&nbsp; AI Summer Curriculum</footer>
+
+<script>
+const TOPIC_LABELS = { homework: '📚 Homework', pizza: '🍕 Pizza', dog: '🐶 My Dog', room: '🧹 Cleaning My Room' };
+const GENRE_LABELS = { punk: '🎸 Punk Rock', lullaby: '🌙 Lullaby', country: '🤠 Country', rap: '🎤 Rap' };
+const GENRE_ORDER = ['punk', 'lullaby', 'country', 'rap'];
+
+const MATRIX = {
+  'punk-homework': { lyrics: 'No more worksheets, no more pens!\nI\'m breaking free — homework, this is the end!', desc: 'Punk is loud, fast, and rebellious — perfect for complaining about something annoying. Short shouty lines, a defiant tone.' },
+  'punk-pizza':    { lyrics: 'Extra cheese, extra rage!\nPizza power, turn the page!', desc: 'Even a fun topic like pizza gets punk\'s aggressive energy and blunt, rhyming shouts.' },
+  'punk-dog':      { lyrics: 'Chains off, run wild and free!\nMy dog\'s the loudest punk you\'ll see!', desc: 'The dog becomes a rebel too — punk reshapes the topic to fit its own attitude.' },
+  'punk-room':     { lyrics: 'Clothes on the floor, don\'t care, don\'t mind!\nClean room? Leave that rule behind!', desc: 'A messy room becomes a punk anthem against rules — genre drives the attitude, not the topic.' },
+
+  'lullaby-homework': { lyrics: 'Hush now, put the pencil down...\nDreams are softer than a frown...', desc: 'Same topic, totally different feeling — lullabies are slow, gentle, and soothing no matter what they\'re about.' },
+  'lullaby-pizza':    { lyrics: 'Hush now, cheesy dreams so deep...\nSlice by slice, drift off to sleep...', desc: 'Pizza turns calm and dreamy instead of exciting — the genre overrides how "hype" the topic normally feels.' },
+  'lullaby-dog':      { lyrics: 'Sleep now, paws are tucked in tight...\nGood dog dreams through the night...', desc: 'A tender, quiet moment — lullabies slow everything down and soften every word choice.' },
+  'lullaby-room':     { lyrics: 'Hush now, toys are put away...\nRest until another day...', desc: 'Even a chore becomes peaceful — lullaby phrasing makes anything sound like bedtime.' },
+
+  'country-homework': { lyrics: 'Sittin\' at my desk past dark,\nTryin\' to finish \'fore the spark.', desc: 'Country brings storytelling and a slower, reflective pace — homework becomes a small personal tale.' },
+  'country-pizza':    { lyrics: 'Down at the diner, one more slice,\nSimple joys, ain\'t that nice.', desc: 'Country loves simple, down-home imagery — even pizza gets a folksy, grounded feel.' },
+  'country-dog':      { lyrics: 'He\'s my best friend down a dusty road,\nTail a-waggin\', carryin\' my heaviest load.', desc: 'Loyalty and open roads are classic country themes — the genre fits this topic naturally.' },
+  'country-room':     { lyrics: 'Boots by the door, dust on the shelf,\nSomeday I\'ll clean it, by myself.', desc: 'Laid-back and a little wistful — country makes procrastination sound almost poetic.' },
+
+  'rap-homework': { lyrics: 'Pencil in hand, page after page,\nHomework got me stuck in a cage.', desc: 'Rap leans on rhythm and wordplay — tighter rhymes, a driving beat, more attitude through flow than melody.' },
+  'rap-pizza':    { lyrics: 'Cheese drippin\' down, crust so tight,\nPizza on my mind, day and night.', desc: 'Confident, rhythmic bragging about pizza — rap turns even food into a hype track.' },
+  'rap-dog':      { lyrics: 'My dog\'s my ride-or-die, no lie,\nLoyal every day, never asks why.', desc: 'Loyalty themes again, but the delivery — rhyme-dense, rhythmic — sounds nothing like the country version.' },
+  'rap-room':     { lyrics: 'Socks on the floor, don\'t judge me quick,\nClean it tomorrow, that\'s the trick.', desc: 'Same excuse as the punk version, but rap\'s flow makes it sound clever instead of rebellious.' }
+};
+
+let currentTopic = 'homework';
+let currentGenre = 'punk';
+
+function key() { return currentGenre + '-' + currentTopic; }
+
+function updatePanel() {
+  document.getElementById('panel-title').textContent = GENRE_LABELS[currentGenre] + ' — ' + TOPIC_LABELS[currentTopic].replace(/^\S+\s/, '');
+  document.getElementById('prompt-text').textContent = `"A ${GENRE_LABELS[currentGenre].replace(/^\S+\s/, '').toLowerCase()} song about ${TOPIC_LABELS[currentTopic].replace(/^\S+\s/, '').toLowerCase()}, about 15 seconds long."`;
+  resetCurrent();
+}
+
+function pickChip(el, groupId) {
+  document.querySelectorAll('#' + groupId + ' .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  if (groupId === 'topic-group') currentTopic = el.dataset.topic;
+  if (groupId === 'genre-group') currentGenre = el.dataset.genre;
+  updatePanel();
+}
+
+function keepTopicSwapGenre() {
+  const idx = GENRE_ORDER.indexOf(currentGenre);
+  const nextGenre = GENRE_ORDER[(idx + 1) % GENRE_ORDER.length];
+  currentGenre = nextGenre;
+  document.querySelectorAll('#genre-group .chip').forEach(c => c.classList.toggle('active', c.dataset.genre === nextGenre));
+  updatePanel();
+}
+
+function showJingle() {
+  const data = MATRIX[key()];
+  document.getElementById('lyric-lines').innerHTML = data.lyrics.replace(/\n/g, '<br>');
+  document.getElementById('r-desc').textContent = data.desc;
+  document.getElementById('result-box').classList.add('show');
+  const btn = document.getElementById('btn-reveal');
+  btn.textContent = '✓ Revealed';
+  btn.classList.add('done');
+}
+
+function resetCurrent() {
+  document.getElementById('result-box').classList.remove('show');
+  const btn = document.getElementById('btn-reveal');
+  btn.textContent = '✨ See what AI made';
+  btn.classList.remove('done');
+}
+
+updatePanel();
+</script>
+</body>
+</html>

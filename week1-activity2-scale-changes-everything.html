@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale Changes Everything</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --teal: #0F6E56; --teal-light: #E1F5EE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --gold: #92650A; --gold-light: #FBF0DA;
+    --gray-mid: #888780; --gray-dark: #444441;
+    --text: #1A1A1A; --text-secondary: #6b6b68; --text-muted: #9e9d99;
+    --border: #e0ded6; --border-strong: #c4c2ba;
+    --bg: #f7f5f0; --surface: #ffffff; --surface-alt: #f1efe8;
+    --radius: 10px; --radius-lg: 14px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'SF Mono', 'Consolas', monospace;
+  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); padding: 20px 24px; display: flex; align-items: flex-start; justify-content: space-between; position: sticky; top: 0; z-index: 10; flex-wrap: wrap; gap: 12px; }
+  header .header-left h1 { font-size: 21px; font-weight: 700; color: #fff; }
+  header .header-left p { font-size: 13px; color: #D8D5F5; margin-top: 3px; }
+  .pill { font-size: 12px; font-weight: 600; padding: 6px 13px; border-radius: 20px; white-space: nowrap; background: rgba(255,255,255,0.14); color: #fff; text-decoration: none; }
+
+  main { max-width: 860px; margin: 0 auto; padding: 26px 20px 60px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+  .panel h2 { font-size: 17px; font-weight: 700; color: var(--purple-dark); margin-bottom: 10px; }
+  .panel .muted { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
+  .tool-link { display: inline-flex; align-items: center; gap: 6px; background: var(--purple); color: #fff; font-weight: 600; font-size: 13.5px; padding: 10px 18px; border-radius: 8px; text-decoration: none; }
+
+  /* Scale comparison */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 22px 0; }
+  @media (max-width: 620px) { .compare { grid-template-columns: 1fr; } }
+  .compare-card { border-radius: var(--radius-lg); padding: 20px; border: 1px solid; text-align: center; }
+  .compare-card.small { background: var(--coral-light); border-color: #EFC4AC; }
+  .compare-card.big { background: var(--teal-light); border-color: #9FDDC4; }
+  .compare-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .compare-card.small .compare-label { color: var(--coral); }
+  .compare-card.big .compare-label { color: var(--teal); }
+  .compare-number { font-family: var(--mono); font-size: 30px; font-weight: 700; margin-bottom: 6px; }
+  .compare-card.small .compare-number { color: var(--coral); }
+  .compare-card.big .compare-number { color: var(--teal); }
+  .compare-sub { font-size: 12.5px; color: var(--text-secondary); }
+  .vs-label { text-align: center; font-size: 13px; font-weight: 700; color: var(--text-muted); margin: -6px 0 6px; }
+
+  .scale-bar-wrap { margin: 20px 0; }
+  .scale-bar { height: 34px; background: var(--surface-alt); border-radius: 17px; overflow: hidden; display: flex; border: 1px solid var(--border-strong); position: relative; }
+  .scale-bar-fill { background: var(--coral); width: 0.001%; height: 100%; }
+  .scale-bar-caption { font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+
+  .discuss-block { border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 14px; border: 1px solid; }
+  .db-1 { background: var(--purple-light); border-color: #C9C4F2; }
+  .db-2 { background: var(--teal-light); border-color: #9FDDC4; }
+  .db-3 { background: var(--coral-light); border-color: #EFC4AC; }
+  .db-4 { background: var(--gold-light); border-color: #E8CE93; }
+  .discuss-block h3 { font-size: 14.5px; font-weight: 700; margin-bottom: 8px; }
+  .db-1 h3 { color: var(--purple-dark); }
+  .db-2 h3 { color: var(--teal); }
+  .db-3 h3 { color: var(--coral); }
+  .db-4 h3 { color: var(--gold); }
+  textarea { width: 100%; font-family: var(--font); font-size: 14px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); resize: vertical; min-height: 54px; }
+  textarea:focus { outline: none; border-color: var(--purple); }
+
+  .key-idea { background: var(--purple); border-radius: var(--radius-lg); padding: 22px; margin-top: 10px; }
+  .key-idea h3 { color: #fff; font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .key-idea p { color: #E4E2FA; font-size: 14px; line-height: 1.6; }
+  .key-idea b { color: #fff; }
+
+  footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<a href="../index.html" id="ascBackHome" style="position:fixed;top:16px;left:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,0.92);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;font-weight:600;padding:9px 14px;border-radius:30px;text-decoration:none;box-shadow:0 4px 14px rgba(15,23,42,0.25);backdrop-filter:blur(6px);transition:transform .15s ease, background .15s ease;">&larr; Home</a><style>#ascBackHome:hover{transform:translateY(-1px);background:rgba(37,99,235,0.95);}@media(max-width:640px){#ascBackHome{font-size:12px;padding:7px 11px;top:10px;left:10px;}}</style>
+
+<header>
+  <div class="header-left">
+    <h1>📈 Scale Changes Everything</h1>
+    <p>Track B · Week 1 · Activity 2 — Why Quick Draw is so much better than your model</p>
+  </div>
+  <span class="pill">15 min</span>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>Play a few rounds first</h2>
+    <p class="muted">Open Quick Draw and play at least 3 rounds. You'll get 20 seconds per drawing — AI tries to guess what you're sketching in real time, updating its guess with every stroke.</p>
+    <a class="tool-link" href="https://quickdraw.withgoogle.com" target="_blank" rel="noopener">🔗 Open Quick Draw</a>
+  </div>
+
+  <div class="panel">
+    <h2>The numbers behind it</h2>
+    <p class="muted">In Activity 1, you trained your gesture classifier on your own data. Quick Draw's model was trained very differently. Compare the scale:</p>
+    <div class="compare">
+      <div class="compare-card small">
+        <div class="compare-label">Your classifier</div>
+        <div class="compare-number">~120</div>
+        <div class="compare-sub">images total (≈40 × 3 gestures), from 1 person, 1 room, 1 lighting setup</div>
+      </div>
+      <div class="compare-card big">
+        <div class="compare-label">Quick Draw</div>
+        <div class="compare-number">50,000,000</div>
+        <div class="compare-sub">drawings, from 15 million people, across the entire world</div>
+      </div>
+    </div>
+    <div class="scale-bar-wrap">
+      <div class="scale-bar"><div class="scale-bar-fill" id="scale-fill"></div></div>
+      <div class="scale-bar-caption">That bar isn't a rendering bug — your dataset really is that close to zero on this scale. Quick Draw's is roughly <b>400,000×</b> larger.</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Discussion — answer as you play</h2>
+
+    <div class="discuss-block db-1">
+      <h3>1. Why does it recognize some drawings instantly and struggle with others?</h3>
+    </div>
+
+    <div class="discuss-block db-2">
+      <h3>2. How is 50 million drawings from 15 million people different from your 40 webcam photos in Activity 1?</h3>
+    </div>
+
+    <div class="discuss-block db-3">
+      <h3>3. What happens when you draw something in an unusual style — does it still get it?</h3>
+    </div>
+
+    <div class="discuss-block db-4">
+      <h3>4. Watch the guesses change stroke by stroke. What does that tell you about how the model processes your input in real time?</h3>
+    </div>
+  </div>
+
+  <div class="key-idea">
+    <h3>The key contrast</h3>
+    <p>Your Teachable Machine model is <b>narrow and fragile</b> — it had ~120 examples from one person. Quick Draw is <b>robust and fast</b> because it had 50 million. Scale of training data changes everything — and this idea sits behind modern AI like ChatGPT, which is trained on a scale even larger than Quick Draw's.</p>
+  </div>
+</main>
+<footer>Track B · Week 1 · Activity 2 &nbsp;|&nbsp; AI Builders Curriculum</footer>
+
+<script>
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('scale-fill').style.transition = 'width 1.2s ease';
+    document.getElementById('scale-fill').style.width = '0.02%';
+  }, 300);
+});
+</script>
+</body>
+</html>
